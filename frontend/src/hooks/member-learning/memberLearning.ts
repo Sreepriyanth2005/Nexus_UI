@@ -42,7 +42,7 @@ export const useMemberLearningCourses = (
     queryKey: ["memberLearning", "raw", userId, tenantId, role],
     queryFn: () => memberLearningApi.getRawLearningData(userId, role, tenantId),
     enabled: enabled && !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes cache for fast filtering
+    staleTime: 30 * 1000, // 30 seconds cache for fast updates
   });
 
   const filteredData = useMemo(() => {

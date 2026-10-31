@@ -280,9 +280,35 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
     });
   }
 
+  // Single Course Lessons
+  if (url.match(/\/courses\/[a-zA-Z0-9_-]+\/lessons/) && method === "GET") {
+    const parts = url.split("?")[0].split("/");
+    const courseId = parts[parts.indexOf("courses") + 1];
+    const found = STATIC_COURSES.find((c) => c.id === courseId || c.courseId === courseId) || STATIC_COURSES[0];
+    const lessons = (found?.modules || []).flatMap((m) => m.lessons || []).map((l, i) => ({
+      id: l.id || `cl-${i}`,
+      courseId: found.id,
+      lessonId: l.id,
+      sequenceOrder: i + 1,
+      order: i + 1,
+      lesson: {
+        ...l,
+        courseId: found.id,
+      },
+      ...l,
+    }));
+    return createMockResponse(config, {
+      success: true,
+      data: lessons,
+      lessons,
+      courseLessons: lessons,
+      total: lessons.length,
+    });
+  }
+
   // Single Course by ID
   const courseMatch = url.match(/\/courses\/([a-zA-Z0-9_-]+)/);
-  if (courseMatch && method === "GET" && !url.includes("/all") && !url.includes("/me")) {
+  if (courseMatch && method === "GET" && !url.includes("/all") && !url.includes("/me") && !url.includes("/lessons") && !url.includes("/enroll")) {
     const courseId = courseMatch[1];
     if (courseId !== "me" && courseId !== "all") {
       const found = STATIC_COURSES.find((c) => c.id === courseId || c.courseId === courseId) || STATIC_COURSES[0];
@@ -444,6 +470,40 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
     });
   }
 
+  // Assigned Content for Corporate Learning
+  if (url.includes("/assigned-content") || (url.includes("/corporate-learning") && (url.includes("/assigned") || url.includes("/available-courses")))) {
+    const assignedCourses = STATIC_COURSES.map((c) => ({
+      id: c.id,
+      courseId: c.id,
+      contentId: c.id,
+      course: c,
+      requirement: "MANDATORY",
+      status: "IN_PROGRESS",
+    }));
+    return createMockResponse(config, {
+      success: true,
+      data: {
+        courses: assignedCourses,
+        careerPaths: [],
+        lessons: [],
+        items: assignedCourses,
+      },
+      courses: assignedCourses,
+      careerPaths: [],
+      lessons: [],
+      items: assignedCourses,
+    });
+  }
+
+  // Course / Career Path Enrollment
+  if (url.includes("/enroll") && method === "POST") {
+    return createMockResponse(config, {
+      success: true,
+      message: "Successfully enrolled in the course",
+      data: { enrolled: true, enrolledAt: new Date().toISOString() },
+    });
+  }
+
   if (url.includes("/tenants") || url.includes("/corporate")) {
     if (method === "GET") {
       if (url.includes("/users")) {
@@ -573,9 +633,9 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
         { date: "2026-03-30", count: 480 },
       ],
       topLearning: [
-        { id: "crs-ai-101", title: "AI & Machine Learning Foundations", type: "Course", enrollments: 1420, completions: 1108, completionRate: 78 },
-        { id: "crs-cloud-201", title: "Multi-Cloud Security & DevSecOps", type: "Course", enrollments: 980, completions: 823, completionRate: 84 },
-        { id: "crs-lead-301", title: "Executive Leadership & Strategic Influence", type: "Course", enrollments: 450, completions: 410, completionRate: 91 },
+        { id: "crs-ai-101", title: "Commercial Office Cleaning & Sanitization Standards", type: "Course", enrollments: 1420, completions: 1108, completionRate: 78 },
+        { id: "crs-cloud-201", title: "Office Pantry Room Operations & Beverage Station Care", type: "Course", enrollments: 980, completions: 823, completionRate: 84 },
+        { id: "crs-lead-301", title: "Food Safety, Kitchenette Hygiene & Cross-Contamination Prevention", type: "Course", enrollments: 450, completions: 410, completionRate: 91 },
       ],
       systemHealth: {
         emailDelivery: 99.4,
@@ -584,9 +644,9 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
         storage: "Operational",
       },
       recentActivity: [
-        { id: "act-1", title: "Sarah Vance published AI Foundations", time: "10 mins ago", type: "COURSE" },
-        { id: "act-2", title: "Acme Corp assigned Leadership Path to 150 learners", time: "1 hour ago", type: "ASSIGNMENT" },
-        { id: "act-3", title: "Dr. Evelyn Reed approved Quantum Module 1", time: "3 hours ago", type: "REVIEW" },
+        { id: "act-1", title: "Sarah Vance published Cleaning & Sanitization Standards", time: "10 mins ago", type: "COURSE" },
+        { id: "act-2", title: "Acme Corp assigned Pantry Operations to 150 learners", time: "1 hour ago", type: "ASSIGNMENT" },
+        { id: "act-3", title: "Dr. Evelyn Reed approved Food Safety Module 1", time: "3 hours ago", type: "REVIEW" },
       ]
     };
 
@@ -665,8 +725,8 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
     return createMockResponse(config, {
       success: true,
       data: [
-        { id: "notif-1", title: "New Course Enrolled", message: "You have been enrolled in AI & Machine Learning Foundations.", read: false, createdAt: "2 hours ago" },
-        { id: "notif-2", title: "Certificate Ready", message: "Your certificate for Corporate Compliance is ready to view.", read: true, createdAt: "1 day ago" },
+        { id: "notif-1", title: "New Course Enrolled", message: "You have been enrolled in Commercial Office Cleaning & Sanitization Standards.", read: false, createdAt: "2 hours ago" },
+        { id: "notif-2", title: "Certificate Ready", message: "Your certificate for Office Pantry Room Operations is ready to view.", read: true, createdAt: "1 day ago" },
       ],
       unreadCount: 1,
     });

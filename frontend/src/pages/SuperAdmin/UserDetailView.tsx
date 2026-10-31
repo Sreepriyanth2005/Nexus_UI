@@ -422,27 +422,27 @@ export default function UserDetailView({
     return [
       {
         id: "enr-mock-1",
-        title: "AI & Machine Learning Foundations for Enterprise",
-        subtitle: "Artificial Intelligence · Registered Jan 2026",
+        title: "Commercial Office Cleaning & Sanitization Standards",
+        subtitle: "Facility Cleaning · Registered Jan 2026",
         progress: 100,
         status: "Course Completed",
         thumbnailUrl:
-          "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80",
         createdAt: "2026-01-15T09:00:00Z",
       },
       {
         id: "enr-mock-2",
-        title: "Executive Leadership & Strategic Influence",
-        subtitle: "Professional Development · Registered Feb 2026",
+        title: "Office Pantry Room Operations & Beverage Station Care",
+        subtitle: "Pantry Management · Registered Feb 2026",
         progress: 100,
         status: "Course Completed",
         thumbnailUrl:
-          "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80",
         createdAt: "2026-02-10T14:30:00Z",
       },
       {
         id: "enr-mock-3",
-        title: "Cloud Infrastructure Architecture & DevSecOps",
+        title: "Food Safety, Kitchenette Hygiene & Cross-Contamination Prevention",
         subtitle: "Cloud & Security · Registered Mar 2026",
         progress: 68,
         status: "In Progress",

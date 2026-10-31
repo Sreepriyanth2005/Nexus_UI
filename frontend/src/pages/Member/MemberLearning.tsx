@@ -11,7 +11,6 @@ import {
   useEnrollCourse,
 } from "../../hooks/member-learning/memberLearning";
 import { useCategories } from "../../hooks/category/useCategories";
-import { useCareerPaths } from "../../hooks/career-path/useCareerPaths";
 import { useSubjects } from "../../hooks/useSubjects";
 import { useSkills } from "../../hooks/useMaster";
 import {
@@ -19,7 +18,6 @@ import {
   isPublishedLearningContent,
   memberLearningApi,
 } from "../../core/api/member-learning/memberLearningApi";
-import { getAssignedContentApi } from "../../core/api/corporate-learning.api";
 import { useProfile } from "../../hooks/profile/useProfile";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -144,8 +142,6 @@ const MemberLearning: React.FC = () => {
   const { data: skills = [] } = useSkills();
   const skillNames = skills.map((s: any) => s.name);
 
-  const [allocatedIds, setAllocatedIds] = React.useState<Set<string>>(new Set());
-  const [showWarningPopup, setShowWarningPopup] = React.useState(false);
   const [searchInput, setSearchInput] = React.useState("");
 
   const [selectedCatalogTab, setSelectedCatalogTab] = React.useState("All Content");
@@ -183,7 +179,7 @@ const MemberLearning: React.FC = () => {
     Category: categoryNames.length > 0 ? categoryNames : [],
     Subject: subjectNames.length > 0 ? subjectNames : [],
     Duration: ["Under 2h", "2-5h", "5h+"],
-    "Learning type": ["Course", "Explainer video", "Lesson"],
+    "Learning type": ["Course", "Explainer video"],
     "Skill level": skillNames.length > 0 ? skillNames : ["Foundation", "Practitioner", "Expert"],
     "Completion status": ["Not started", "In progress", "Course completed"],
     Language: []
@@ -205,18 +201,6 @@ const MemberLearning: React.FC = () => {
     "Language",
   ];
 
-  const [showAllCareerPaths, setShowAllCareerPaths] = React.useState(false);
-
-  const { data: careerPathsResp } = useCareerPaths({ limit: 100 });
-  
-  const publishedCareerPaths = React.useMemo(() => {
-    const resp: any = careerPathsResp;
-    const rawData = Array.isArray(resp) ? resp : resp?.data?.data || resp?.data || [];
-    return rawData.filter((cp: any) =>
-      isPublishedLearningContent(cp) && isLearningContentVisible(cp, effectiveRole, tenantId ?? undefined)
-    );
-  }, [careerPathsResp, effectiveRole, tenantId]);
-
   // Fetch profile on mount if not already in store (e.g. navigating directly to this page)
   useEffect(() => {
     if (!profile) {
@@ -224,36 +208,8 @@ const MemberLearning: React.FC = () => {
     }
   }, []);
 
-  // Fetch allocated content if tenant user
-  useEffect(() => {
-    if (tenantId && currentUserId) {
-      getAssignedContentApi(tenantId, currentUserId).then((data: any) => {
-        const ids = new Set<string>();
-        data?.courses?.forEach((a: any) => {
-          const c = a.course || a.content || a;
-          if (c.id) ids.add(c.id);
-        });
-        data?.careerPaths?.forEach((a: any) => {
-          const p = a.careerPath || a.content || a;
-          if (p.id) ids.add(p.id);
-        });
-        data?.lessons?.forEach((a: any) => {
-          const l = a.lesson || a.content || a;
-          if (l.id) ids.add(l.id);
-        });
-        setAllocatedIds(ids);
-      }).catch((err: any) => console.error("Failed to fetch allocated data", err));
-    }
-  }, [tenantId, currentUserId]);
-
-  const handleCourseClick = (id: string, type: string, isEnrolled?: boolean) => {
-    if (effectiveRole === "CORPORATE_USER") {
-      if (!isEnrolled && !allocatedIds.has(id)) {
-        setShowWarningPopup(true);
-        return;
-      }
-    }
-    navigate(`/course-details?id=${id}&type=${type}`);
+  const handleCourseClick = (id: string, type: string = "course") => {
+    navigate(`/course-details?id=${id}&type=${type || "course"}`);
   };
 
   // 2. Get UI state from Zustand store
@@ -300,10 +256,11 @@ const MemberLearning: React.FC = () => {
     tenantId ?? undefined
   );
 
-  // Reset store on mount
+  // Reset store on mount and show up to 12 courses by default
   useEffect(() => {
     resetStore();
-  }, [resetStore]);
+    setLimit(12);
+  }, [resetStore, setLimit]);
 
   // Sync local search input with global search state when it gets cleared
   useEffect(() => {
@@ -397,37 +354,14 @@ const MemberLearning: React.FC = () => {
   let listData = rawListData.filter((c: any) => {
     // Strictly courses only - no career-path or standalone lesson
     if (c.type && c.type !== "course") return false;
-    const selectedLearningTypes = selectedFilters["Learning type"] || [];
 
-    // Filter by explicitly selected Learning Types first
-    let matchesSelectedType = true;
+    const selectedLearningTypes = selectedFilters["Learning type"] || [];
     if (selectedLearningTypes.length > 0) {
       let isMatch = false;
-      if (selectedLearningTypes.includes("Course") && c.type === "course" && c.publishType !== "EXPLAINER") isMatch = true;
-      if (selectedLearningTypes.includes("Lesson") && c.type === "lesson") isMatch = true;
-      if (selectedLearningTypes.includes("Career path") && c.type === "career-path") isMatch = true;
-      if (selectedLearningTypes.includes("Explainer video") && c.type === "course" && c.publishType === "EXPLAINER") isMatch = true;
-      matchesSelectedType = isMatch;
+      if (selectedLearningTypes.includes("Course") && c.publishType !== "EXPLAINER") isMatch = true;
+      if (selectedLearningTypes.includes("Explainer video") && c.publishType === "EXPLAINER") isMatch = true;
+      if (!isMatch) return false;
     }
-    if (!matchesSelectedType) return false;
-
-    // Check if any local filters are currently applied
-    const hasLocalFilters = Object.values(selectedFilters).some(arr => arr && arr.length > 0);
-
-    // Base visibility checks for unselected/default states
-    let passesType = false;
-    if (c.type === "course") {
-      passesType = c.isStandalone !== false;
-    } else if (c.type === "lesson") {
-      // If "Lesson" is explicitly selected, or ANY filter is applied, show it. Otherwise, require search.
-      passesType = (selectedLearningTypes.includes("Lesson") || hasLocalFilters) ? true : (!!search && search.trim() !== "");
-    } else if (c.type === "career-path") {
-      passesType = selectedLearningTypes.includes("Career path");
-    } else {
-      passesType = false;
-    }
-
-    if (!passesType) return false;
 
     // Combine Domain and Subject filters to apply an OR logic between them
     const selectedDomains = selectedFilters["Domain"] || [];
@@ -558,36 +492,14 @@ const MemberLearning: React.FC = () => {
   }
 
   return (
-    <div className="w-full  bg-white font-sans text-gray-900">
-      {showWarningPopup && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-9999">
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4 text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Access Denied</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              You need to enrol. Please contact your tenant admin.
-            </p>
-            <button
-              onClick={() => setShowWarningPopup(false)}
-              className="w-full bg-gray-900 text-white rounded-lg px-4 py-2 font-bold hover:bg-black transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
+    <div className="w-full bg-white font-sans text-gray-900">
       <div className="mx-auto space-y-6">
         {/* --- PAGE HEADER (Matching Vercel /catalog) --- */}
         <div>
           <p className="text-[12px] font-bold uppercase tracking-widest text-[#5c5c5c] mb-2">LEARNING HUB</p>
           <h1 className="text-[24px] font-bold tracking-tight text-[#141414] leading-tight mb-2">Course catalog</h1>
           <p className="text-[16px] text-[#5c5c5c] font-normal">
-            Explore courses, career paths, master classes, explainers, talks and more.
+            Explore courses, master classes, explainers, talks and more.
           </p>
         </div>
 
@@ -773,129 +685,6 @@ const MemberLearning: React.FC = () => {
           )}
         </div>
 
-        {/* Dynamic Career Paths Section */}
-        {publishedCareerPaths.length > 0 && (
-        <div className="bg-[#fcfbf9] border border-gray-200/70 rounded-2xl p-6 space-y-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-base font-bold text-[#141414]">Career paths</h2>
-              <p className="text-[14px] text-[#5c5c5c] mt-0.5">Stack courses into a recognised, Nexus-governed path and track progress end to end.</p>
-            </div>
-            {publishedCareerPaths.length > 3 && (
-            <button
-              type="button"
-              onClick={() => setShowAllCareerPaths(!showAllCareerPaths)}
-              className="text-[12px] font-bold text-[#5c5c5c] hover:text-[#141414] tracking-wider uppercase transition-colors cursor-pointer"
-            >
-              {showAllCareerPaths ? "VIEW LESS ↑" : "VIEW ALL →"}
-            </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
-            {(showAllCareerPaths ? publishedCareerPaths : publishedCareerPaths.slice(0, 3)).map((cp: any) => {
-              // Cross-reference with rawListData to get accurate enrollment and progress
-              const cpFromAllLearnings = rawListData.find((c: any) => c.type === 'career-path' && (c.id === cp.id || c.courseId === cp.id));
-              const progress = cpFromAllLearnings?.progress || cp.progress || 0;
-              const isEnrolled = cpFromAllLearnings?.isEnrolled || cp.isEnrolled || false;
-              const inProgress = isEnrolled && progress > 0 && progress < 100;
-              
-              const imgUrl = cp.thumbnailUrl || cp.coverImageUrl || "No Image";
-              const totalCourses = cp.courses?.length || cp.careerPathCourses?.length || 0;
-              
-              return (
-              <div
-                key={cp.id}
-                onClick={() => handleCourseClick(cp.id, "career-path", isEnrolled)}
-                className={`bg-white border border-[var(--line)] rounded-[14px] overflow-hidden shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-hover)] transition-all duration-[var(--dur-base)] cursor-pointer group flex flex-col h-full ${
-                  role === "CORPORATE_USER" && !isEnrolled && !allocatedIds.has(cp.id) 
-                    ? "opacity-75 hover:-translate-y-0 hover:border-[var(--line)]"
-                    : "hover:-translate-y-1 hover:border-[var(--c-honey)]"
-                }`}
-              >
-                <div className="h-36 relative bg-[var(--surface-3)] overflow-hidden shrink-0">
-                  <img src={imgUrl} alt={cp.title} className={`w-full h-full object-cover ${role === "CORPORATE_USER" && !isEnrolled && !allocatedIds.has(cp.id) ? "grayscale" : ""}`} />
-                </div>
-                <div className="p-5 flex flex-col flex-1">
-                  <div className="flex items-center gap-1.5 mb-3">
-                    {isEnrolled ? (
-                      <span className="bg-[var(--sage-wash)] text-[var(--sage-text)] text-[11px] font-extrabold uppercase px-2 py-0.5 rounded-full border border-[var(--c-sage-soft)]">
-                        {progress >= 100 ? "COMPLETED" : "IN PROGRESS"}
-                      </span>
-                    ) : (
-                      <span className="bg-[var(--honey-wash)] text-[var(--honey-text)] text-[11px] font-extrabold uppercase px-2 py-0.5 rounded-full border border-[var(--c-honey-soft)]">
-                        PATH
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-[20px] font-bold text-[var(--ink)] leading-tight mb-1.5">{cp.title}</h3>
-                  {(() => {
-                    const cpTotalMins = Number(
-                      cp.totalDurationMins ||
-                      cp.duration ||
-                      cp.estimatedDuration ||
-                      cpFromAllLearnings?.totalDurationMins ||
-                      (cp.courses || cp.careerPathCourses || []).reduce((sum: number, cpc: any) => {
-                        const c = cpc.course || cpc;
-                        const cDur = Number(c?.duration || c?.estimatedDuration || 0);
-                        if (cDur > 0) return sum + cDur;
-                        const lDur = (c?.courseLessons || []).reduce((lSum: number, cl: any) => lSum + Number(cl.lesson?.duration || cl.duration || 0), 0);
-                        return sum + lDur;
-                      }, 0) ||
-                      0
-                    );
-                    const durFormatted = formatMinutesToDisplay(cpTotalMins);
-                    return (
-                      <p className="text-[14px] text-[var(--ink-mute)]">
-                        {totalCourses} course{totalCourses === 1 ? "" : "s"}
-                        {durFormatted ? ` · ${durFormatted}` : ""}
-                        {` · ${cp.difficulty ? cp.difficulty.charAt(0).toUpperCase() + cp.difficulty.slice(1).toLowerCase() : 'Practitioner'}`}
-                      </p>
-                    );
-                  })()}
-                  
-                  <div className="mt-auto pt-2">
-                    {isEnrolled && (
-                      <div className="mb-4">
-                        <div className="w-full bg-[var(--surface-3)] h-1.5 rounded-full overflow-hidden mb-1.5">
-                          <div className="bg-[var(--sage)] h-full rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
-                        </div>
-                        <p className="text-[12px] font-bold text-[var(--ink-soft)]">{Math.round(progress)}% complete</p>
-                      </div>
-                    )}
-                    {isCorporateAdmin ? (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/course-assignment?contentId=${cp.id}&type=CAREER_PATH&title=${encodeURIComponent(cp.title)}`, {
-                            state: { contentId: cp.id, contentType: "CAREER_PATH", title: cp.title }
-                          });
-                        }}
-                        className="bg-[#c99b2e] hover:bg-[#b08523] text-white px-4 py-1.5 rounded-full text-[13px] font-bold transition-colors cursor-pointer inline-flex items-center gap-1 shadow-sm"
-                      >
-                        Assign
-                      </button>
-                    ) : (
-                      <span className={`text-[14px] font-bold flex items-center gap-1 ${
-                        role === "CORPORATE_USER" && !isEnrolled && !allocatedIds.has(cp.id) 
-                          ? "text-[var(--ink-mute)]" 
-                          : "text-[var(--honey-text)] "
-                      }`}>
-                        {isEnrolled ? 'Continue path' : (role === "CORPORATE_USER" && !allocatedIds.has(cp.id) ? 'Locked' : 'Start path')} 
-                        {!(role === "CORPORATE_USER" && !isEnrolled && !allocatedIds.has(cp.id)) && (
-                          <span className="group-hover:translate-x-0.5 transition-transform">→</span>
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )})}
-          </div>
-        </div>
-        )}
-
         {/* --- MAIN FULL-WIDTH CONTENT AREA --- */}
         <div className="w-full space-y-8">
           {/* Error state */}
@@ -930,7 +719,7 @@ const MemberLearning: React.FC = () => {
           {!isLoadingCourses && !isErrorCourses && (
             <div className="space-y-6 pt-4">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-[18px] font-bold text-[#141414] tracking-tight">All Learnings</h2>
+                <h2 className="text-[18px] font-bold text-[#141414] tracking-tight">All Courses</h2>
                 <div className="flex items-center gap-4 text-[14px] text-[#5c5c5c] font-medium">
                   <div className="flex items-center gap-2">
                     <span>Show</span>
@@ -964,7 +753,7 @@ const MemberLearning: React.FC = () => {
                 {paginatedListData.map((course: any) => (
                   <CourseCard
                     key={course.id}
-                    variant={course.type === "career-path" ? "career-path" : "course"}
+                    variant="course"
                     category={course.category}
                     title={course.title}
                     level={course.level}
@@ -977,20 +766,19 @@ const MemberLearning: React.FC = () => {
                     statusText={course.statusText}
                     isWishlisted={course.isWishlisted}
                     isWishlistLoading={wishlistMutation.isPending && wishlistMutation.variables?.entityId === course.id}
-                    onWishlistToggle={(e) => handleWishlistToggle(course.id, course.type || 'course', e)}
+                    onWishlistToggle={(e) => handleWishlistToggle(course.id, 'course', e)}
                     onEnrol={(e) => handleEnrol(course.id, e)}
                     isEnrolLoading={enrollMutation.isPending && enrollMutation.variables === course.id}
-                    onClick={() => handleCourseClick(course.id, course.type || 'course', course.isEnrolled)}
-                    type={course.type}
+                    onClick={() => handleCourseClick(course.id, 'course')}
+                    type="course"
                     isListView={viewMode === 'list'}
                     lessonsCount={course.lessonsCount ?? (course as any).totalLessons ?? (course as any).lessons?.length ?? 0}
                     role={role || undefined}
-                    isAllocated={allocatedIds.has(course.id) || allocatedIds.has(course.courseId)}
                     isCorporateAdmin={isCorporateAdmin}
                     onAssign={(e) => {
                       e.stopPropagation();
-                      navigate(`/course-assignment?contentId=${course.id}&type=${course.type === 'career-path' ? 'CAREER_PATH' : 'COURSE'}&title=${encodeURIComponent(course.title)}`, {
-                        state: { contentId: course.id, contentType: course.type === 'career-path' ? 'CAREER_PATH' : 'COURSE', title: course.title }
+                      navigate(`/course-assignment?contentId=${course.id}&type=COURSE&title=${encodeURIComponent(course.title)}`, {
+                        state: { contentId: course.id, contentType: 'COURSE', title: course.title }
                       });
                     }}
                   />
@@ -1237,15 +1025,9 @@ const CourseCard: React.FC<CourseCardProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (type !== "lesson" && onAssign) onAssign(e);
+                  if (onAssign) onAssign(e);
                 }}
-                disabled={type === "lesson"}
-                className={`px-4 h-7 rounded-full text-[12px] font-bold transition-colors whitespace-nowrap shadow-sm ${
-                  type === "lesson"
-                    ? "bg-gray-200 text-[#5c5c5c] cursor-not-allowed"
-                    : "bg-[#c99b2e] text-white hover:bg-[#b08523] cursor-pointer"
-                }`}
-                title={type === "lesson" ? "Standalone lessons cannot be assigned directly" : undefined}
+                className="px-4 h-7 rounded-full text-[12px] font-bold transition-colors whitespace-nowrap shadow-sm bg-[#c99b2e] text-white hover:bg-[#b08523] cursor-pointer"
               >
                 Assign
               </button>
@@ -1255,21 +1037,19 @@ const CourseCard: React.FC<CourseCardProps> = ({
                   e.stopPropagation();
                   if (!isEnrolled && onEnrol) onEnrol(e);
                 }}
-                disabled={isEnrolled || type === "lesson" || (role === "CORPORATE_USER" && !isAllocated) || isEnrolLoading}
+                disabled={isEnrolled || isEnrolLoading}
                 className={`px-4 h-7 rounded-full text-[12px] font-bold transition-colors whitespace-nowrap ${
                   isEnrolled
                     ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
-                    : type === "lesson" || (role === "CORPORATE_USER" && !isAllocated) || isEnrolLoading
+                    : isEnrolLoading
                     ? "bg-gray-200 text-[#5c5c5c] cursor-not-allowed" 
-                    : "bg-[#7e9b6f] text-[#ffffff] hover:bg-[#67855e]"
+                    : "bg-[#7e9b6f] text-[#ffffff] hover:bg-[#67855e] cursor-pointer"
                 }`}
               >
                 {isEnrolLoading 
                   ? "..." 
                   : isEnrolled 
                   ? "Enrolled" 
-                  : type === "lesson" || (role === "CORPORATE_USER" && !isAllocated) 
-                  ? "Locked" 
                   : "Enrol"}
               </button>
             )}

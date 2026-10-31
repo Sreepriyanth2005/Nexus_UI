@@ -60,16 +60,31 @@ const saveLocalState = (state: LocalLearningState) => {
 };
 
 export const isLearningContentVisible = (item: any, role?: string, tenantId?: string) => {
-  const visibility = String(item?.visibility || "PUBLIC_CATALOG").toUpperCase();
+  const rawVisibility = String(item?.visibility || "PUBLIC_CATALOG").toUpperCase();
   const normalizedRole = role?.toUpperCase().replace(/[\s-]+/g, "_");
   const isCorporateAdmin =
     normalizedRole === "CORPORATE_ADMIN" ||
     normalizedRole === "CORPORATEADMIN" ||
-    normalizedRole === "ADMIN";
+    normalizedRole === "ADMIN" ||
+    normalizedRole === "SUPER_ADMIN" ||
+    normalizedRole === "SUPERADMIN";
   const isCorporateUser =
     normalizedRole === "CORPORATE_USER" ||
     normalizedRole === "CORPORATEUSER" ||
     normalizedRole === "USER";
+
+  const isPublic =
+    rawVisibility === "PUBLIC_CATALOG" ||
+    rawVisibility === "PUBLIC" ||
+    rawVisibility === "ALL" ||
+    !item?.visibility;
+  const isBoth =
+    rawVisibility === "BOTH" ||
+    rawVisibility === "PUBLIC_AND_CORPORATE";
+  const isTenantOnly =
+    rawVisibility === "TENANT_ONLY" ||
+    rawVisibility === "TENANT" ||
+    rawVisibility === "CORPORATE";
 
   const itemTenantIds = [
     item?.tenantId,
@@ -82,30 +97,32 @@ export const isLearningContentVisible = (item: any, role?: string, tenantId?: st
   ].filter(Boolean);
 
   const belongsToTenant = !!tenantId && itemTenantIds.some((id: any) => String(id) === String(tenantId));
-  const isTenantOnly = visibility === "TENANT_ONLY" || visibility === "TENANT" || visibility === "CORPORATE";
-  const isBoth = visibility === "BOTH";
 
   if (isCorporateAdmin) {
     if (isTenantOnly) {
       return belongsToTenant;
     }
-    if (isBoth) {
-      return true;
-    }
-    return false;
+    return true;
   }
 
-  return isCorporateUser
-    ? visibility === "PUBLIC_CATALOG" || isBoth || (isTenantOnly && belongsToTenant)
-    : visibility === "PUBLIC_CATALOG" || isBoth;
+  if (isCorporateUser) {
+    return isPublic || isBoth || (isTenantOnly && belongsToTenant);
+  }
+
+  return true;
 };
 
 export const isPublishedLearningContent = (item: any) => {
   const status = item?.status;
-  return !status || String(status).toUpperCase() === "PUBLISHED";
+  return (
+    !status ||
+    String(status).toUpperCase() === "PUBLISHED" ||
+    String(status).toUpperCase() === "ACTIVE" ||
+    String(status).toUpperCase() === "APPROVED"
+  );
 };
 
-export const isStandaloneCourse = (item: any) => item?.isStandalone === true;
+export const isStandaloneCourse = (item: any) => true;
 
 export const DEFAULT_KM_SKILLS = ["Taxonomy", "Metadata", "Governance", "KM strategy"];
 
@@ -403,7 +420,7 @@ export const memberLearningApi = {
     const lessonPayload = lessonsRes.data?.data || lessonsRes.data?.items || lessonsRes.data || [];
     const lessons = (Array.isArray(lessonPayload) ? lessonPayload : []).filter((ls: any) => isPublishedLearningContent(ls));
     const publishedCourses = courses.filter((course: any) =>
-      isPublishedLearningContent(course) && isStandaloneCourse(course)
+      isPublishedLearningContent(course)
     );
 
     // Build lookup from career paths so any course in a career path gets path info and career path skills
