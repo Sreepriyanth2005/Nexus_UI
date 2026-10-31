@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Nexus Academy mark">
+  <defs>
+    <linearGradient id="favGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F3D37A"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#AA820A"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="48" height="48" rx="12" fill="#141414"/>
+  <g transform="translate(4, 4)">
+    <path d="M 20,2 L 36,11 L 36,29 L 20,38 L 4,29 L 4,11 Z" fill="none" stroke="url(#favGold)" stroke-width="2" opacity="0.6"/>
+    <path d="M 12,29 L 12,11 L 16,11 L 24,25 L 24,11 L 28,11 L 28,29 L 24,29 L 16,15 L 16,29 Z" fill="#FFFFFF"/>
+    <circle cx="20" cy="2" r="2.5" fill="url(#favGold)"/>
+    <circle cx="36" cy="11" r="2.5" fill="url(#favGold)"/>
+    <circle cx="36" cy="29" r="2.5" fill="url(#favGold)"/>
+    <circle cx="20" cy="38" r="2.5" fill="url(#favGold)"/>
+    <circle cx="4" cy="29" r="2.5" fill="url(#favGold)"/>
+    <circle cx="4" cy="11" r="2.5" fill="url(#favGold)"/>
+  </g>
+</svg>

@@ -1,0 +1,295 @@
+/* ==========================================================================
+   Nexus Design Tokens
+   The atoms. Every other file in the kit references these variables.
+   Vanilla CSS, no build step.
+   ========================================================================== */
+
+:root {
+
+  /* ======================================================================
+     0. WARM EARTHY PALETTE (from colourpallet.md)
+     ====================================================================== */
+  --earth-espresso:   #582f0e;
+  --earth-umber:      #7f4f24;
+  --earth-caramel:    #936639;
+  --earth-khaki:      #a68a64;
+  --earth-sand:       #b6ad90;
+  --earth-bone:       #c2c5aa;
+  --earth-sage:       #a4ac86;
+  --earth-olive:      #656d4a;
+  --earth-deep-olive: #414833;
+  --earth-moss:       #333d29;
+
+  /* ======================================================================
+     0. ENTERPRISE SLATE & ROYAL SAPPHIRE PALETTE (from colourpallet.md)
+     Ultra-professional tier-1 SaaS aesthetic
+     ====================================================================== */
+  --slate-obsidian:   #090d16; /* Obsidian Dark Canvas */
+  --slate-900:        #0f172a; /* Midnight Navy / Slate 900 */
+  --slate-800:        #1e293b; /* Dark Slate 800 */
+  --slate-700:        #334155; /* Slate 700 */
+  --slate-600:        #475569; /* Slate 600 */
+  --slate-500:        #64748b; /* Slate 500 */
+  --slate-400:        #94a3b8; /* Slate Mist 400 */
+  --slate-300:        #cbd5e1; /* Slate 300 */
+  --slate-200:        #e2e8f0; /* Crisp Border 200 */
+  --slate-100:        #f1f5f9; /* Slate 100 */
+  --slate-50:         #f8fafc; /* Slate Canvas 50 */
+  --white:            #ffffff;
+
+  /* Primary Brand Sapphire */
+  --sapphire-600:     #2563eb;
+  --sapphire-700:     #1d4ed8;
+  --sapphire-500:     #3b82f6;
+  --sapphire-100:     #dbeafe;
+  --sapphire-50:      #eff6ff;
+
+  /* Tech Indigo Secondary */
+  --indigo-600:       #4f46e5;
+  --indigo-500:       #6366f1;
+  --indigo-50:        #eef2ff;
+
+  /* Status Tokens */
+  --emerald-500:      #10b981;
+  --emerald-50:       #ecfdf5;
+  --amber-500:        #f59e0b;
+  --amber-50:         #fffbeb;
+  --rose-500:         #ef4444;
+  --rose-50:          #fef2f2;
+  --violet-500:       #8b5cf6;
+  --violet-50:        #f5f3ff;
+
+  /* Semantic UI Application */
+  --color-primary:       var(--sapphire-600);
+  --color-primary-hover: var(--sapphire-700);
+  --color-accent:        var(--indigo-600);
+  --color-bg-dark:       var(--slate-900);
+  --color-surface-dark:  var(--slate-800);
+  --color-border:        var(--slate-200);
+  --color-muted-bg:      var(--slate-50);
+
+  /* ======================================================================
+     1. COLOR
+     Warm, paper-and-ink editorial palette. One ink scale + one warm-white
+     surface stack carries ~85% of colored nodes; four semantic hues sit on
+     top, each shipping the base / soft / wash / text triad.
+     Pairing rule: *-text foreground on *-wash background.
+     ====================================================================== */
+
+  /* --- 1a. Ink scale (text + strokes) --------------------------------- */
+  --ink-deep:  #000000;   /* pure black, rare max-contrast (text 6, bg 6) */
+  --ink:       #141414;   /* primary body + heading text (7,013 nodes, top) */
+  --ink-soft:  #3a3a3a;   /* secondary text (4,515 nodes) */
+  --ink-mute:  #5c5c5c;   /* muted text, labels, captions (6,193 nodes) */
+  --ink-faint: #8c8c8c;   /* faint/placeholder (147 nodes). AA-fail as body text: reserve for >=24px or non-text */
+  /* ALIAS COLLAPSE: #5c5c5c has 3 names. Canonical = --ink-mute. */
+  --muted:     #5c5c5c;   /* alias of --ink-mute */
+  --ink-label: #5c5c5c;   /* alias of --ink-mute */
+
+  /* --- 1b. Paper / surface stack -------------------------------------- */
+  --paper:     #ffffff;   /* base surface, cards, page bg (4,113 bg nodes, top) */
+  --paper-2:   #f6f6f4;   /* raised/alt surface, striped rows (1,486 bg) */
+  --surface-3: #e8e8e3;   /* third surface / inset wells / progress track (436 bg) */
+  --bg-alt:    #eeeeea;   /* alt page background (33 bg) */
+  /* ALIAS COLLAPSE: white has 4 names. Canonical = --paper. */
+  --bg:        #ffffff;   /* alias of --paper */
+  --page:      #ffffff;   /* alias of --paper */
+  --card:      #ffffff;   /* alias of --paper */
+  /* ALIAS COLLAPSE: #f6f6f4 has 2 names. Canonical = --paper-2. */
+  --card-2:    #f6f6f4;   /* alias of --paper-2 */
+
+  /* --- 1c. Honey (single brand accent + progress fill + active bar) --- */
+  --c-honey:      #c99b2e; /* brand gold: icons, active bar, badges, borders (433 bg, 246 text) */
+  --c-honey-soft: #edd79a; /* soft gold border/fill (18 borders, 6 bg) */
+  --c-honey-wash: #f6e8c4; /* pale gold chip/callout bg (483 bg) */
+  --c-honey-text: #755a12; /* gold text on wash (372 text) */
+  /* ALIAS COLLAPSE: honey base has --c-honey and --honey. Canonical = --c-honey. */
+  --honey:        #c99b2e; /* alias of --c-honey */
+  --honey-wash:   #f6e8c4; /* alias of --c-honey-wash */
+  --honey-text:   #755a12; /* alias of --c-honey-text */
+
+  /* --- 1d. Sage (success / positive) ---------------------------------- */
+  --c-sage:      #7e9b6f;  /* success hue: solid fills, icons, borders (778 bg, 3rd most used) */
+  --c-sage-soft: #bfcfb4;  /* soft sage border/fill (30 borders) */
+  --c-sage-wash: #dce5d3;  /* pale sage bg, success chips/rows (571 bg) */
+  --c-sage-text: #446038;  /* sage text on wash (466 text) */
+  --c-check:     #2e9f5b;  /* brighter, distinct green for check/valid/toggle-on (90 bg, 75 borders) */
+  /* ALIAS COLLAPSE: sage base has --c-sage and --sage. Canonical = --c-sage. */
+  --sage:        #7e9b6f;  /* alias of --c-sage */
+  --sage-wash:   #dce5d3;  /* alias of --c-sage-wash */
+  --sage-text:   #446038;  /* alias of --c-sage-text */
+
+  /* --- 1e. Clay (warm secondary / warning-adjacent) ------------------- */
+  --c-clay:      #b8654e;  /* clay/terracotta accent, solid fills, icons (219 bg, 186 text) */
+  --c-clay-soft: #ddb0a0;  /* soft clay border/fill (9 borders) */
+  --c-clay-wash: #efd3c7;  /* pale clay chip bg (264 bg) */
+  --c-clay-text: #8f3a20;  /* clay text on wash (57 text) */
+  /* ALIAS COLLAPSE: clay base has --c-clay and --clay. Canonical = --c-clay. */
+  --clay:        #b8654e;  /* alias of --c-clay */
+  --clay-wash:   #efd3c7;  /* alias of --c-clay-wash */
+  --clay-text:   #8f3a20;  /* alias of --c-clay-text */
+
+  /* --- 1f. Danger / urgent -------------------------------------------- */
+  --c-danger:      #c12a1c; /* error/urgent red: text, solid, borders (144 text, 42 bg) */
+  --c-danger-deep: #9e2014; /* deeper red for hover/pressed AND text on danger-wash (24 text) */
+  --c-danger-wash: #f7d9d4; /* pale red alert bg (36 bg, 9 borders) */
+  /* ALIAS COLLAPSE: danger base has --c-danger and --urgent. Canonical = --c-danger. */
+  --urgent:      #c12a1c;   /* alias of --c-danger */
+  --urgent-wash: #f7d9d4;   /* alias of --c-danger-wash */
+
+  /* --- 1g. Accent (terracotta) - distinct from clay, do NOT merge ----- */
+  --accent:      #b8523e;  /* accent terracotta, links/highlights (129 text, 15 bg) */
+  --accent-deep: #963f2e;  /* pressed/deep accent (15 text) */
+  /* Note (A1g): --accent #b8523e and --clay #b8654e are close but distinct
+     and used in different roles; do not merge without a design decision. */
+
+  /* --- 1h. Hero band + primary button (the signature interaction yellow) */
+  --hero-bg:      #fcf7ae; /* pale chartreuse-yellow: hero band, button surface, active sidebar (169 bg) */
+  --hero-bg-deep: #f0ea8a; /* deeper yellow: button hover, hero gradient stop */
+  /* Note: visually adjacent to honey but a separate, lighter token. */
+
+  /* --- 1i. Lines, scrim, focus ---------------------------------------- */
+  --line:        #1111111a; /* hairline border, #111111 @ 10% (6,757 borders, the default stroke) */
+  --line-strong: #11111129; /* stronger divider, #111111 @ 16% (1,583 borders, 288 bg) */
+  --scrim:       #1111118c; /* modal/overlay scrim, #111111 @ 55% (21 bg) */
+  --focus-ring:  #2a11081f; /* focus outline, warm ink @ 12% (~1.15:1). A11Y DEFECT, see note */
+  /* A11Y (Part F3/F6): --focus-ring at 12% alpha fails SC 2.4.7/1.4.11 (~1.15:1 on white).
+     Ship a solid >=3:1 indicator instead, e.g. outline: 2px solid var(--c-honey-text) (5.35:1)
+     or var(--ink) (18.42:1) with a 2px offset. Highest-impact single fix. */
+
+  /* --- 1j. Supabase auth (namespaced, intentionally off-palette) ------ */
+  --supa-c-otp-text:        #3e6b82;   /* OTP field text, steel blue (auth only) */
+  --supa-c-otp-border:      #50829b8c; /* OTP field border, steel blue @ 55% */
+  --supa-c-clay-chip-text:  #8c4534;   /* clay chip text in auth */
+  --supa-c-impers-start-bg: #c99b2e0f; /* impersonation banner bg, honey @ 6% */
+
+  /* ======================================================================
+     2. TYPOGRAPHY
+     Manrope is the entire system (21,612 of 21,669 text nodes, 99.7%).
+     ====================================================================== */
+
+  /* --- 2a. Font stacks ------------------------------------------------- */
+  --font-sans:  "Manrope", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: "Manrope", system-ui, sans-serif;  /* MISNOMER: resolves to Manrope, not a serif (A8e) */
+  --font-label: "Manrope", system-ui, sans-serif;
+  --font:       "Manrope", sans-serif;             /* short alias; canonical = --font-sans */
+
+  /* --- 2b. Font-size scale (declared, 7 steps: 33/24/20/16/14/12/11) --- */
+  --fs-hero:    33px;  /* hero / display headline (63 nodes) */
+  --fs-display: 33px;  /* alias of --fs-hero */
+  --fs-h1:      24px;  /* page H1 (615 nodes) */
+  --fs-h2:      20px;  /* section H2 (326 nodes) */
+  --fs-h3:      16px;  /* subhead (16px, shared with body, split by weight) */
+  --fs-body:    16px;  /* body copy (= --fs-h3, distinguished by weight; 5,575 nodes at 16px) */
+  --fs-meta:    14px;  /* meta / secondary body (6,667 nodes) */
+  --fs-label:   12px;  /* labels, chips, captions (7,664 nodes, most common size) */
+  --fs-micro:   11px;  /* micro text, tiny meta (513 nodes, the type floor) */
+  /* Workhorse trio 12/14/16 covers 92% of all text. Do not ship text below 11px. */
+
+  /* --- 2c. Font weights (DERIVED from live text nodes, A2c) ------------ */
+  --fw-regular:   400;  /* body copy, muted meta (6,301 nodes) */
+  --fw-medium:    500;  /* light emphasis, low-volume extra (783 nodes) */
+  --fw-semibold:  600;  /* buttons, labels, sub-headings (5,531 nodes) */
+  --fw-bold:      700;  /* headings, key labels, emphasis (7,088 nodes, most common) */
+  --fw-extrabold: 800;  /* display / hero / strong numerals (1,966 nodes) */
+  /* No 300 or 900 present. Ship 400/600/700/800, with 500 as a low-volume extra. */
+
+  /* --- 2d. Line-height + tracking (DERIVED, A2d) ---------------------- */
+  --lh-body:  1.55;    /* body leading ratio (12->18.6, 14->21.7, 16->24.8) */
+  --lh-tight: 1.15;    /* headings tighten (e.g. 31px lead @ hero) */
+  --ls-label: 0.16em;  /* positive tracking on small uppercase labels (measured 1.92px @ 12px) */
+
+  /* ======================================================================
+     3. SPACING (DERIVED, A3)
+     Intended token scale is a clean 2px-based ladder. Named --space-1..15
+     in ascending order. Component gaps live in --space-3..8 (6-16px);
+     card/section padding in --space-8..11 (16-28px); page gutters 32-60px.
+     ====================================================================== */
+  --space-0:  0.5px;   /* hairline nudge */
+  --space-1:  2px;   /* hairline nudge */
+  --space-2:  4px;   /* chip vertical padding */
+  --space-3:  6px;   /* tight component gap (1,898) */
+  --space-4:  8px;   /* dominant component gap (2,397, top of histogram) */
+  --space-5:  10px;  /* component gap (1,817) */
+  --space-6:  12px;  /* component gap, card grid gutter (1,578) */
+  --space-7:  14px;  /* component gap (1,811) */
+  --space-8:  16px;  /* card padding floor / section gap (883) */
+  --space-9:  20px;  /* card padding (473) */
+  --space-10: 24px;  /* card padding ceiling / section gap (405) */
+  --space-11: 28px;  /* large card inset / desktop main gutter (209) */
+  --space-12: 32px;  /* page/section separation */
+  --space-13: 40px;  /* page/section separation */
+  --space-14: 48px;  /* page/section separation */
+  --space-15: 60px;  /* largest page-level inset */
+
+  /* ======================================================================
+     4. RADII
+     ====================================================================== */
+  --r-xs:   8px;   /* small controls, inputs, chips (8: 1,527 in data) */
+  --r-sm:   8px;   /* small cards (= --r-xs). ALIAS COLLAPSE: --r-xs = --r-sm = 8px */
+  --r-md:   10px;  /* default card radius (10: 1,863) */
+  --r-lg:   14px;  /* large cards / panels (14: 1,566) */
+  --r-pill: 100px; /* pills, fully rounded chips/buttons (100: 2,143). 50% avatars share this intent */
+
+  /* ======================================================================
+     5. SHADOWS (all warm-tinted on the #2a1108 warm-ink base)
+     ====================================================================== */
+  --shadow-xs:    0 1px 2px #2a11080f;         /* hairline lift, warm ink @ 6% */
+  --shadow-sm:    0 4px 16px -4px #2a11081a;   /* default card shadow, warm ink @ 10% (564, most used) */
+  --shadow-card:  0 24px 48px -16px #2a11081a; /* elevated / floating card / dialog, warm ink @ 10% */
+  --shadow:       0 4px 16px -4px #1111111a;   /* neutral-ink alias of --shadow-sm */
+  --shadow-hover: 0 8px 28px -8px #11111129;   /* hover elevation, neutral ink @ 16% */
+  /* Rest->hover delta (E6.2): y 4->8, blur 16->28, spread -4->-8, alpha 10->16%. */
+
+  /* ======================================================================
+     6. MOTION
+     One declared easing token drives every transition. Durations are NOT
+     declared in :root; the --dur-* below are the audit's recommended
+     additions (Part E6.6 dev-ready timing table), not live app tokens.
+     ====================================================================== */
+  --tn: cubic-bezier(.32,.72,0,1);  /* fast-out, long-settle ease. The single system curve */
+
+  /* Recommended duration ladder (E6.6) - add on handoff */
+  --dur-fast: 130ms;  /* button fill, chip/tag, input focus */
+  --dur-base: 180ms;  /* card/tile hover elevation, nav item */
+  --dur-slow: 240ms;  /* mobile drawer + scrim, modal in */
+
+  /* ======================================================================
+     7. COMPONENT TOKENS
+     ====================================================================== */
+  --btn:       #fcf7ae;  /* primary button surface (= --hero-bg) */
+  --btn-hover: #f0ea8a;  /* primary button hover (= --hero-bg-deep) */
+  --btn-ink:   #141414;  /* primary button label, ink on yellow (= --ink) */
+
+  --sidebar-active-bg:  #fcf7ae; /* active sidebar row background (= --btn) */
+  --sidebar-active-bar: var(--ink-soft); /* active sidebar left indicator bar */
+  --sidebar-active-text: var(--ink); /* active sidebar text color */
+  --sidebar-text: var(--ink-soft); /* normal sidebar text color */
+
+  --rail-w: 308px;  /* RIGHT-HAND content aside inside <main> on dashboards (measured 308x942).
+                       NOT the left nav. See --sidebar-w below and audit A7 rail note. */
+
+  /* DERIVED (recommended, A7/C1): the left persona nav measures 228px live on all six
+     sidebar components. It is not a declared token; add it so the two rails never conflict. */
+  --sidebar-w: 228px;
+
+    --sidebar-w: 228px;
+  --sidebar-collapsed-w: 72px;
+
+  --sidebar-item-h: 40px;
+  --sidebar-item-radius: 9px;
+
+  --sidebar-icon-size: 17px;
+  --sidebar-icon-stroke: 1.7;
+
+  --sidebar-gap: 10px;
+  --sidebar-padding-x: 12px;
+
+  --sidebar-hover-bg: #f1f5f9;
+  --sidebar-active-bg: #eff6ff;
+  --sidebar-active-text: #1d4ed8;
+  --sidebar-active-bar: #2563eb;
+
+  --sidebar-submenu-indent: 28px;
+
+}

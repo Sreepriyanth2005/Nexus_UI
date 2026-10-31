@@ -1,0 +1,60 @@
+/* VideoPlayer.css */
+
+.video-player-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Custom theme overrides for video.js */
+.vjs-theme-nexus .vjs-big-play-button {
+  background-color: rgba(59, 130, 246, 0.8) !important;
+  border: none !important;
+  border-radius: 50% !important;
+  width: 60px !important;
+  height: 60px !important;
+  line-height: 60px !important;
+  margin-top: -30px !important;
+  margin-left: -30px !important;
+  transition: all 0.3s ease !important;
+}
+
+.vjs-theme-nexus:hover .vjs-big-play-button {
+  background-color: rgba(37, 99, 235, 1) !important;
+  transform: scale(1.05);
+}
+
+.vjs-theme-nexus .vjs-control-bar {
+  background-color: rgba(17, 24, 39, 0.8) !important;
+}
+
+.vjs-theme-nexus .vjs-play-progress {
+  background-color: #3b82f6 !important;
+}
+
+.vjs-theme-nexus .vjs-volume-level {
+  background-color: #3b82f6 !important;
+}
+
+.vjs-theme-nexus .vjs-slider {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Vidstack caption customization */
+media-player .vds-caption-cue,
+media-player .vds-captions [data-part="cue"],
+media-player .media-captions [data-part="cue"] {
+  font-size: var(--custom-caption-font-size, 18px) !important;
+  color: var(--custom-caption-color, #ffffff) !important;
+  background-color: var(--custom-caption-bg, rgba(0, 0, 0, 0.75)) !important;
+  padding: 6px 14px !important;
+  border-radius: 8px !important;
+  line-height: normal !important;
+}
+  
+.hide-fullscreen vds-fullscreen-button { display: none !important; }  
+.hide-volume vds-mute-button, .hide-volume vds-volume-slider, .hide-volume vds-volume-slider-value { display: none !important; }  
+.hide-caption vds-caption-button { display: none !important; } 

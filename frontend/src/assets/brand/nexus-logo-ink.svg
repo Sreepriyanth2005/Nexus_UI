@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80">
+  <defs>
+    <linearGradient id="nexusGoldInk" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E5B842"/>
+      <stop offset="50%" stop-color="#C99B2E"/>
+      <stop offset="100%" stop-color="#997318"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Modern Nexus Emblem -->
+  <g transform="translate(10, 10)">
+    <!-- Hexagonal outer nodes & connection -->
+    <path d="M 30,2 L 54,16 L 54,44 L 30,58 L 6,44 L 6,16 Z" fill="none" stroke="url(#nexusGoldInk)" stroke-width="2.5" stroke-linejoin="round" opacity="0.75"/>
+    
+    <!-- Stylized dynamic 'N' / Nexus Monogram -->
+    <path d="M 17,45 L 17,15 L 23,15 L 37,39 L 37,15 L 43,15 L 43,45 L 37,45 L 23,21 L 23,45 Z" fill="#141414"/>
+    
+    <!-- Gold node accents -->
+    <circle cx="30" cy="2" r="3.5" fill="url(#nexusGoldInk)"/>
+    <circle cx="54" cy="16" r="3.5" fill="url(#nexusGoldInk)"/>
+    <circle cx="54" cy="44" r="3.5" fill="url(#nexusGoldInk)"/>
+    <circle cx="30" cy="58" r="3.5" fill="url(#nexusGoldInk)"/>
+    <circle cx="6" cy="44" r="3.5" fill="url(#nexusGoldInk)"/>
+    <circle cx="6" cy="16" r="3.5" fill="url(#nexusGoldInk)"/>
+    <circle cx="30" cy="30" r="2.5" fill="#C99B2E"/>
+  </g>
+
+  <!-- Brand Typography -->
+  <g transform="translate(82, 0)">
+    <text x="0" y="42" font-family="'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800" fill="#141414" letter-spacing="3.5">NEXUS</text>
+    <text x="1.5" y="58" font-family="'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#C99B2E" letter-spacing="5">ACADEMY</text>
+  </g>
+</svg>

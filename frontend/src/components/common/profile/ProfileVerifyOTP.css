@@ -1,0 +1,177 @@
+/* ===========================
+   OTP Modal Overlay
+=========================== */
+.otp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+/* ===========================
+   Modal
+=========================== */
+.otp-modal {
+  width: 100%;
+  max-width: 460px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 36px 32px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+/* ===========================
+   Title & Description
+=========================== */
+.otp-modal h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.otp-modal p {
+  margin: 12px 0 28px;
+  color: #6b7280;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ===========================
+   OTP Input Row
+=========================== */
+.otp-inputs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+/* ===========================
+   OTP Box
+=========================== */
+.otp-digit {
+  width: 54px;
+  height: 60px;
+  border: 2px solid #d1d5db;
+  border-radius: 12px;
+  background: #f9fafb;
+
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+
+  transition: all 0.2s ease;
+}
+
+.otp-digit:hover {
+  border-color: #9ca3af;
+}
+
+.otp-digit:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+/* ===========================
+   Timer / Resend
+=========================== */
+.otp-modal small {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.otp-modal button {
+  transition: all 0.2s ease;
+}
+
+.otp-modal button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===========================
+   Button Group
+=========================== */
+.otp-modal > div:last-child {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.otp-modal > div:last-child button {
+  flex: 1;
+  height: 46px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Verify Button */
+.otp-modal > div:last-child button:first-child {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.otp-modal > div:last-child button:first-child:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+/* Cancel Button */
+.otp-modal > div:last-child button:last-child {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.otp-modal > div:last-child button:last-child:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+/* Resend Button */
+.otp-modal button[type="button"]:not(:last-child):not(:first-child) {
+  background: transparent;
+  color: #2563eb;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ===========================
+   Responsive
+=========================== */
+@media (max-width: 480px) {
+  .otp-modal {
+    padding: 28px 20px;
+  }
+
+  .otp-inputs {
+    gap: 8px;
+  }
+
+  .otp-digit {
+    width: 44px;
+    height: 52px;
+    font-size: 20px;
+    border-radius: 10px;
+  }
+
+  .otp-modal > div:last-child {
+    flex-direction: column;
+  }
+
+  .otp-modal > div:last-child button {
+    width: 100%;
+  }
+}
