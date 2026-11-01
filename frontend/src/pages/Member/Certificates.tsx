@@ -163,24 +163,30 @@ const Certificates: React.FC = () => {
     }
   };
 
+  const allCertificates: any[] = useMemo(() => {
+    const raw = certsResponse?.data || (certsResponse as any)?.certificates || (certsResponse as any)?.items;
+    if (Array.isArray(raw)) return raw;
+    return [];
+  }, [certsResponse]);
+
   const activeCert = useMemo(() => {
-    if (!certsResponse?.data || certsResponse.data.length === 0) return null;
+    if (allCertificates.length === 0) return null;
     if (courseId && courseId !== "default-course-id") {
-      const found = certsResponse.data.find(
+      const found = allCertificates.find(
         (c: any) =>
           c.courseId === courseId ||
           c.careerPathId === courseId ||
+          c.career_path_id === courseId ||
           c.course?.id === courseId ||
           c.id === courseId ||
           c.originalId === courseId ||
-          c.careerPath?.id === courseId
+          c.careerPath?.id === courseId ||
+          c.career_paths?.id === courseId
       );
       if (found) return found;
-      // If specified ID is not found, fallback to the most recent certificate rather than breaking the page
-      return certsResponse.data[0];
     }
-    return certsResponse.data[0];
-  }, [certsResponse, courseId]);
+    return allCertificates[0];
+  }, [allCertificates, courseId]);
 
   const profileName = useMemo(() => {
     if (!profileData) return "";
@@ -284,24 +290,87 @@ const Certificates: React.FC = () => {
         }
       `}</style>
 
-      {/* Page Header */}
-      <div className="bg-white border-b border-slate-200 px-6 py-5 -mx-6 -mt-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Top Header Bar */}
+      <div className="bg-white border-b border-slate-200 px-6 py-4 -mx-6 -mt-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/certificate")}
+            className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
+            title="Back to Completed Courses"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
           <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
             <Award className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
-            <h1 className="text-slate-900 font-bold text-xl leading-tight">My Certificates</h1>
-            <p className="text-slate-500 text-sm">{actualCourseName}</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-slate-900 font-bold text-lg leading-tight">Verified Credential</h1>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[11px] font-bold">
+                <CheckCircle2 className="w-3 h-3" /> Valid
+              </span>
+            </div>
+            <p className="text-slate-500 text-xs mt-0.5">{actualCourseName}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-semibold">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Valid Certificate
-          </span>
+          <button
+            onClick={() => navigate("/member-learning")}
+            className="px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold cursor-pointer transition-all shadow-2xs"
+          >
+            Browse Catalog
+          </button>
+          <button
+            onClick={() => navigate("/certificate")}
+            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer transition-all shadow-xs"
+          >
+            All Certificates
+          </button>
         </div>
       </div>
+
+      {/* Interactive Certificate Switcher Carousel */}
+      {allCertificates.length > 1 && (
+        <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3 sm:p-4 mb-6 shadow-2xs">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+              <Award className="w-4 h-4 text-amber-500" />
+              Your Earned Credentials ({allCertificates.length})
+            </span>
+            <span className="text-[11px] text-slate-400 font-medium">Select to preview</span>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+            {allCertificates.map((cert: any) => {
+              const isSelected = activeCert?.id === cert.id || activeCert?.courseId === cert.courseId;
+              const title = cert.courseTitle || cert.course?.title || cert.career_paths?.title || "Credential";
+              const cId = cert.courseId || cert.course?.id;
+              const cpId = cert.careerPathId || cert.career_path_id;
+              return (
+                <button
+                  key={cert.id}
+                  type="button"
+                  onClick={() => {
+                    if (cId) {
+                      navigate(`/certificate-detail?courseId=${cId}`);
+                    } else if (cpId) {
+                      navigate(`/certificate-detail?careerPathId=${cpId}`);
+                    }
+                  }}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 border flex items-center gap-2 ${
+                    isSelected
+                      ? "bg-amber-400 text-slate-950 border-amber-500 shadow-xs ring-2 ring-amber-300/40"
+                      : "bg-white text-slate-700 hover:bg-slate-100 border-slate-200 shadow-2xs"
+                  }`}
+                >
+                  <Award className={`w-3.5 h-3.5 ${isSelected ? "text-slate-950" : "text-amber-500"}`} />
+                  <span>{title}</span>
+                  {isSelected && <Check className="w-3.5 h-3.5 text-slate-950" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <CertificateHeader
         courseName={actualCourseName}
@@ -380,11 +449,15 @@ const Certificates: React.FC = () => {
               </button>
 
               <button
-                onClick={() => navigate(`/course-player?id=${(activeCert as any)?.course_id || (activeCert as any)?.courseId || urlCourseId || ""}&type=course`)}
+                onClick={() => {
+                  const targetCourseId = (activeCert as any)?.courseId || (activeCert as any)?.course?.id || urlCourseId || "";
+                  const targetCpId = (activeCert as any)?.careerPathId || (activeCert as any)?.career_path_id || urlCareerPathId || "";
+                  navigate(`/course-player?courseId=${targetCourseId}${targetCpId ? `&careerPathId=${targetCpId}` : ''}`);
+                }}
                 className="inline-flex w-full justify-center items-center gap-2.5 px-4 py-3 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm rounded-xl border border-slate-200 transition-all duration-150 cursor-pointer"
               >
                 <Eye className="w-4 h-4 text-slate-500" />
-                Rewatch Course
+                Rewatch Course SOP
               </button>
 
               <button
@@ -412,11 +485,11 @@ const Certificates: React.FC = () => {
               </button>
 
               <button
-                onClick={() => window.open(`/verify/${proofId}`, "_blank")}
+                onClick={() => navigate(`/verify/${proofId}`)}
                 className="inline-flex w-full justify-center items-center gap-2.5 px-4 py-3 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm rounded-xl border border-slate-200 transition-all duration-150 cursor-pointer"
               >
                 <ExternalLink className="w-4 h-4 text-slate-500" />
-                Verify Proof
+                Verify Credential Registry
               </button>
             </div>
           </div>

@@ -351,6 +351,51 @@ const CourseDetails: React.FC = () => {
     link?: string;
   } | null>(null);
 
+  // Offline watch & media storage state
+  const [offlineDownloads, setOfflineDownloads] = useState<{ courses: string[]; lessons: string[] }>(() => {
+    try {
+      const raw = localStorage.getItem("nexus_offline_downloads");
+      if (raw) return JSON.parse(raw);
+    } catch { }
+    return { courses: [], lessons: [] };
+  });
+  const [offlineToast, setOfflineToast] = useState<string | null>(null);
+
+  const isLessonOffline = (lessonId: string) => offlineDownloads.lessons.includes(String(lessonId));
+  const isCourseOffline = (cId: string) => offlineDownloads.courses.includes(String(cId));
+
+  const handleToggleOfflineLesson = (lId: string, lTitle: string, lType: string) => {
+    const idStr = String(lId);
+    let updatedLessons = [...offlineDownloads.lessons];
+    const isNowOffline = !updatedLessons.includes(idStr);
+    if (isNowOffline) {
+      updatedLessons.push(idStr);
+      setOfflineToast(`Saved "${lTitle}" for offline ${lType === 'video' ? 'watching' : lType === 'pdf' ? 'reading' : 'presentation'}!`);
+    } else {
+      updatedLessons = updatedLessons.filter(id => id !== idStr);
+      setOfflineToast(`Removed "${lTitle}" from offline cache.`);
+    }
+    const updated = { ...offlineDownloads, lessons: updatedLessons };
+    setOfflineDownloads(updated);
+    try {
+      localStorage.setItem("nexus_offline_downloads", JSON.stringify(updated));
+    } catch { }
+    setTimeout(() => setOfflineToast(null), 3500);
+  };
+
+  const handleDownloadAllOffline = () => {
+    const allLessonIds = (curriculum || []).map((item: any) => String(item.id)).filter(Boolean);
+    const updatedLessons = Array.from(new Set([...offlineDownloads.lessons, ...allLessonIds]));
+    const updatedCourses = Array.from(new Set([...offlineDownloads.courses, String(courseId)]));
+    const updated = { courses: updatedCourses, lessons: updatedLessons };
+    setOfflineDownloads(updated);
+    try {
+      localStorage.setItem("nexus_offline_downloads", JSON.stringify(updated));
+    } catch { }
+    setOfflineToast("All course modules (Video, PDF, PPT) saved for offline learning!");
+    setTimeout(() => setOfflineToast(null), 4000);
+  };
+
   const itemType = searchParams.get("type") || "course";
   const parentCareerPathId = searchParams.get("careerPathId") || location.state?.careerPathId;
   const parentCareerPathTitle = location.state?.parentCareerPathTitle;
@@ -1175,26 +1220,40 @@ const CourseDetails: React.FC = () => {
       const lType = String(lessonData?.lessonType || lessonData?.type || "").toLowerCase();
       
       let type: "video" | "pdf" | "ppt" | "quiz" = "video";
+      const isQuiz = lType.includes("quiz") || lTitle.includes("quiz") || lTitle.includes("assessment");
       if (lTitle.includes("pdf") || lType.includes("pdf") || lType.includes("doc")) {
         type = "pdf";
       } else if (lTitle.includes("ppt") || lTitle.includes("slide") || lTitle.includes("presentation") || lType.includes("ppt") || lType.includes("presentation") || lType.includes("slide")) {
         type = "ppt";
-      } else if (lType.includes("quiz")) {
+      } else if (isQuiz) {
         type = "quiz";
       } else {
         type = "video";
       }
 
+      const isPreQuiz = isQuiz && (lTitle.includes("pre-") || lTitle.includes("pre ") || lessonData?.quizType === "PRE_ASSESSMENT" || idx === 0);
+      const isPostQuiz = isQuiz && (lTitle.includes("post-") || lTitle.includes("post ") || lessonData?.quizType === "POST_ASSESSMENT" || idx === rawList.length - 1);
+
       // All lessons are open and accessible
       const isUnlocked = true;
-      const statusText = isCourseCompleted ? "Review" : "Start";
-      const typeLabel = type === "pdf" ? "PDF Document" : type === "ppt" ? "PPT Slides" : "Video SOP";
+      const statusText = isPreQuiz ? "Start Pre-Quiz" : isPostQuiz ? "Take Post-Quiz" : isCourseCompleted ? "Review" : "Start";
+      const typeLabel = isPreQuiz
+        ? "Pre-Course Diagnostic Assessment"
+        : isPostQuiz
+        ? "Post-Course Certification Assessment"
+        : type === "pdf"
+        ? "PDF Document"
+        : type === "ppt"
+        ? "PPT Slides"
+        : "Video SOP";
 
       return {
         id: lessonData?.id,
         type: type as any,
+        isPreQuiz,
+        isPostQuiz,
         title: `${cl.sequenceOrder || idx + 1}. ${lessonData?.title || "Untitled Lesson"}`,
-        meta: `${typeLabel} • ${lessonData?.duration ?? 25} min`,
+        meta: `${typeLabel} • ${lessonData?.duration ?? (isPreQuiz ? 10 : isPostQuiz ? 15 : 25)} min`,
         isFreePreview: true,
         statusText: statusText,
       };
@@ -1629,7 +1688,28 @@ const CourseDetails: React.FC = () => {
                     <span>{stats.formattedDuration} total learning time</span>
                   </p>
                 </div>
-                <div className="flex items-center gap-2 self-start sm:self-center">
+                <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-center">
+                  <button
+                    type="button"
+                    onClick={handleDownloadAllOffline}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shadow-2xs border cursor-pointer ${
+                      curriculum.length > 0 && curriculum.every((item: any) => isLessonOffline(item.id))
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                        : "bg-indigo-50 text-indigo-700 border-indigo-200/80 hover:bg-indigo-100"
+                    }`}
+                  >
+                    {curriculum.length > 0 && curriculum.every((item: any) => isLessonOffline(item.id)) ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Offline Ready (All Modules)</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Download for Offline Watch</span>
+                      </>
+                    )}
+                  </button>
                   <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-2xs border ${
                     isEnrolled
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200/80"
@@ -1791,13 +1871,23 @@ const CourseDetails: React.FC = () => {
                         <div className="flex items-center gap-4 min-w-0">
                           {/* Media Type Squircle */}
                           <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 shadow-2xs ${
-                            item.type === "pdf"
+                            item.type === "quiz"
+                              ? (item as any).isPreQuiz || item.title.toLowerCase().includes("pre")
+                                ? "bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-700 text-white shadow-purple-500/20 group-hover:scale-105"
+                                : "bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-emerald-500/20 group-hover:scale-105"
+                              : item.type === "pdf"
                               ? "bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-rose-500/20 group-hover:scale-105"
                               : item.type === "ppt"
                               ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-amber-500/20 group-hover:scale-105"
                               : "bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 text-white shadow-indigo-500/20 group-hover:scale-105"
                           }`}>
-                            {item.type === "pdf" ? (
+                            {item.type === "quiz" ? (
+                              (item as any).isPreQuiz || item.title.toLowerCase().includes("pre") ? (
+                                <HelpCircle className="w-5 h-5 text-white" />
+                              ) : (
+                                <Award className="w-5 h-5 text-white" />
+                              )
+                            ) : item.type === "pdf" ? (
                               <FileText className="w-5 h-5 text-white" />
                             ) : item.type === "ppt" ? (
                               <Presentation className="w-5 h-5 text-white" />
@@ -1834,7 +1924,17 @@ const CourseDetails: React.FC = () => {
                               {item.title}
                             </h4>
                             <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                              {item.type === "pdf" ? (
+                              {item.type === "quiz" ? (
+                                (item as any).isPreQuiz || item.title.toLowerCase().includes("pre") ? (
+                                  <span className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 border border-purple-200/80 px-2 py-0.5 rounded-md text-[11px] font-semibold">
+                                    <HelpCircle className="w-3 h-3 text-purple-600" /> PRE-ASSESSMENT
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-2 py-0.5 rounded-md text-[11px] font-semibold">
+                                    <Award className="w-3 h-3 text-emerald-600" /> CERTIFICATION EXAM
+                                  </span>
+                                )
+                              ) : item.type === "pdf" ? (
                                 <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200/80 px-2 py-0.5 rounded-md text-[11px] font-semibold">
                                   <FileText className="w-3 h-3 text-rose-500" /> PDF GUIDE
                                 </span>
@@ -1855,7 +1955,36 @@ const CourseDetails: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="shrink-0 flex items-center gap-2.5 justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                        <div className="shrink-0 flex items-center gap-2 sm:gap-2.5 justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 flex-wrap">
+                          {/* Offline Watch / Offline Reading Button */}
+                          <button
+                            type="button"
+                            title={isLessonOffline(item.id) ? "Available Offline (Click to remove)" : "Save for offline training"}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleOfflineLesson(item.id, item.title, item.type);
+                            }}
+                            className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-all cursor-pointer shadow-2xs ${
+                              isLessonOffline(item.id)
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                                : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300"
+                            }`}
+                          >
+                            {isLessonOffline(item.id) ? (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>Offline Ready</span>
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                <span>
+                                  {item.type === "pdf" ? "Offline PDF" : item.type === "ppt" ? "Offline PPT" : "Offline Watch"}
+                                </span>
+                              </>
+                            )}
+                          </button>
+
                           <button
                             type="button"
                             title="Share Lesson"
@@ -1875,13 +2004,27 @@ const CourseDetails: React.FC = () => {
                           </button>
 
                           <span className={`inline-flex items-center gap-1.5 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-all group-hover:scale-102 ${
-                            item.type === "pdf"
+                            item.type === "quiz"
+                              ? (item as any).isPreQuiz || item.title.toLowerCase().includes("pre")
+                                ? "bg-purple-600 group-hover:bg-purple-700"
+                                : "bg-emerald-600 group-hover:bg-emerald-700"
+                              : item.type === "pdf"
                               ? "bg-rose-600 group-hover:bg-rose-700"
                               : item.type === "ppt"
                               ? "bg-amber-600 group-hover:bg-amber-700"
                               : "bg-indigo-600 group-hover:bg-indigo-700"
                           }`}>
-                            {item.type === "pdf" ? (
+                            {item.type === "quiz" ? (
+                              (item as any).isPreQuiz || item.title.toLowerCase().includes("pre") ? (
+                                <>
+                                  <HelpCircle className="w-3.5 h-3.5" /> Start Pre-Quiz
+                                </>
+                              ) : (
+                                <>
+                                  <Award className="w-3.5 h-3.5" /> Take Post-Quiz
+                                </>
+                              )
+                            ) : item.type === "pdf" ? (
                               <>
                                 <FileText className="w-3.5 h-3.5" /> Read PDF
                               </>
@@ -2032,6 +2175,16 @@ const CourseDetails: React.FC = () => {
 
               <ul className="space-y-3 text-xs text-slate-700 font-medium">
                 <li className="flex items-center gap-3.5 p-2 rounded-xl hover:bg-slate-50 transition-colors">
+                  <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-200/60 shadow-2xs">
+                    <HelpCircle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-900 block text-xs sm:text-sm">Pre-Course Diagnostic Assessment</span>
+                    <span className="text-slate-500 text-[11px]">Baseline knowledge check & prerequisite evaluation</span>
+                  </div>
+                </li>
+
+                <li className="flex items-center gap-3.5 p-2 rounded-xl hover:bg-slate-50 transition-colors">
                   <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-200/60 shadow-2xs">
                     <Video className="w-4 h-4" />
                   </div>
@@ -2156,27 +2309,54 @@ const CourseDetails: React.FC = () => {
                       Standard SOP
                     </span>
                   </div>
-                  <ul className="space-y-2 text-xs font-medium text-slate-700">
+                  <ul className="space-y-2.5 text-xs font-medium text-slate-700">
                     <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>Complete 100% of video SOP modules</span>
+                      <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0" />
+                      <span>1. Complete Pre-Course Diagnostic Assessment</span>
+                    </li>
+                    <li className="flex items-center gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span>2. Complete 100% of Video, PDF & PPT modules</span>
                     </li>
                     <li className="flex items-center gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>Pass assessment checkpoint (Min. 70%)</span>
+                      <span>3. Pass Final Post-Course Certification Exam (Min. 70%)</span>
                     </li>
                     <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>Obtain digital verified credential</span>
+                      <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
+                      <span>4. Receive verified completion credential & certificate</span>
                     </li>
                   </ul>
-                  <div className="pt-2.5 border-t border-emerald-200/60 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                    <span className="flex items-center gap-1.5">
-                      <Wifi className="w-3.5 h-3.5 text-slate-400" /> Offline training sync
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-200/80 shadow-2xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Supported
-                    </span>
+                  <div className="pt-2.5 border-t border-emerald-200/60 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                      <span className="flex items-center gap-1.5">
+                        <Wifi className="w-3.5 h-3.5 text-slate-400" /> Offline training sync
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-200/80 shadow-2xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Supported
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleDownloadAllOffline}
+                      className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs ${
+                        curriculum.length > 0 && curriculum.every((item: any) => isLessonOffline(item.id))
+                          ? "bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700"
+                          : "bg-white hover:bg-emerald-50/80 text-emerald-800 border-emerald-300"
+                      }`}
+                    >
+                      {curriculum.length > 0 && curriculum.every((item: any) => isLessonOffline(item.id)) ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>All Modules Saved for Offline</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Save Course for Offline Watch</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
 
@@ -2221,6 +2401,16 @@ const CourseDetails: React.FC = () => {
           </aside>
         </div>
       </div>
+
+      {/* Offline Toast Banner */}
+      {offlineToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 animate-in fade-in slide-in-from-bottom-3 duration-300">
+          <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <span className="text-xs font-bold">{offlineToast}</span>
+        </div>
+      )}
 
       {shareItem && (
         <ShareModal

@@ -19,6 +19,7 @@ import {
   STATIC_REPORTS,
   STATIC_REVIEW_QUEUE,
   STATIC_CERTIFICATES,
+  STATIC_QUIZZES,
   StaticUser
 } from "./staticData";
 
@@ -63,6 +64,49 @@ export function resolveMockUser(email: string): StaticUser {
 /**
  * Creates an Axios-compatible response object
  */
+
+/**
+ * Generates a valid minimal PDF 1.4 Blob in pure JavaScript.
+ */
+function createMockPdfBlob(certTitle: string, recipientName: string, serialNumber: string): Blob {
+  const safeTitle = (certTitle || "Professional Training Course").replace(/[()]/g, "");
+  const safeName = (recipientName || "Alex Johnson").replace(/[()]/g, "");
+  const safeSerial = (serialNumber || "NX-2026-CERT").replace(/[()]/g, "");
+
+  const pdfString = "%PDF-1.4\n" +
+    "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+    "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n" +
+    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n" +
+    "4 0 obj\n<< /Length 300 >>\nstream\n" +
+    "BT\n" +
+    "/F1 22 Tf\n" +
+    "50 720 Td\n" +
+    "(NEXUS ACADEMY - CERTIFICATE OF COMPLETION) Tj\n" +
+    "/F1 14 Tf\n" +
+    "0 -40 Td\n" +
+    "(This certifies that " + safeName + " has successfully completed:) Tj\n" +
+    "0 -30 Td\n" +
+    "(" + safeTitle + ") Tj\n" +
+    "0 -40 Td\n" +
+    "(Credential ID: " + safeSerial + ") Tj\n" +
+    "0 -20 Td\n" +
+    "(Issued by Nexus Operational Standards Institute) Tj\n" +
+    "ET\n" +
+    "endstream\nendobj\n" +
+    "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n" +
+    "xref\n" +
+    "0 6\n" +
+    "0000000000 65535 f \n" +
+    "0000000009 00000 n \n" +
+    "0000000058 00000 n \n" +
+    "0000000115 00000 n \n" +
+    "0000000244 00000 n \n" +
+    "0000000597 00000 n \n" +
+    "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n668\n%%EOF";
+
+  return new Blob([pdfString], { type: "application/pdf" });
+}
+
 function createMockResponse<T>(config: InternalAxiosRequestConfig, data: T, status = 200): AxiosResponse<T> {
   return {
     data,
@@ -382,6 +426,268 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
       data: mockLessons,
       lessons: mockLessons,
       total: mockLessons.length,
+    });
+  }
+
+  // Learning Player Lesson Details & Attachments
+  if (url.includes("/learning/player/lesson")) {
+    const parts = url.split("?")[0].split("/");
+    const lessonId = parts[parts.indexOf("lesson") + 1];
+    const isAttachments = url.includes("/attachments");
+
+    const allLessons = STATIC_COURSES.flatMap((c) => c.modules || []).flatMap((m) => m.lessons || []);
+    const foundLesson = allLessons.find((l) => l.id === lessonId) || allLessons[0];
+
+    if (isAttachments) {
+      return createMockResponse(config, {
+        success: true,
+        data: [
+          {
+            id: `att-${lessonId}-pdf`,
+            name: `${foundLesson?.title || "Standard Operating Procedure"} Manual (PDF)`,
+            type: "PDF",
+            url: foundLesson?.pdfUrl || "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+            sizeBytes: 2450000,
+          },
+          {
+            id: `att-${lessonId}-ppt`,
+            name: `${foundLesson?.title || "Staff Training Deck"} Slides (PPTX)`,
+            type: "PPT",
+            url: foundLesson?.pptUrl || "https://file-examples.com/storage/fe55523a1e6490db0285a73/2017/08/file_example_PPT_250kB.ppt",
+            sizeBytes: 5800000,
+          }
+        ]
+      });
+    }
+
+    return createMockResponse(config, {
+      success: true,
+      data: {
+        lessonId: foundLesson?.id || lessonId,
+        title: foundLesson?.title || "Operational Training Lesson",
+        description: "Official procedural standard operating procedures, safety guidelines, and verification checklists.",
+        videoUrl: foundLesson?.videoUrl || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        pdfUrl: foundLesson?.pdfUrl || "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        pptUrl: foundLesson?.pptUrl || "https://file-examples.com/storage/fe55523a1e6490db0285a73/2017/08/file_example_PPT_250kB.ppt",
+        transcriptUrl: null,
+        captionsUrl: null,
+        duration: foundLesson?.duration || 25,
+        isCompleted: false,
+        lastPositionSecs: 0,
+      }
+    });
+  }
+
+  // -------------------------------------------------------------
+  // QUIZZES, ASSESSMENTS & CERTIFICATION EXAMS
+  // -------------------------------------------------------------
+  if (url.startsWith("/quizzes")) {
+    const parts = url.split("?")[0].split("/").filter(Boolean);
+    const quizId = parts.length > 1 ? parts[1] : null;
+
+    if (quizId && quizId !== "quizzes") {
+      const found = STATIC_QUIZZES.find((q) => q.id === quizId) || STATIC_QUIZZES[0];
+      return createMockResponse(config, {
+        success: true,
+        data: found,
+        quiz: found,
+      });
+    }
+
+    const params = config.params || {};
+    let filtered = [...STATIC_QUIZZES];
+
+    if (params.lessonId) {
+      filtered = filtered.filter((q) => String(q.lessonId) === String(params.lessonId) || String(q.id) === String(params.lessonId));
+    } else if (params.courseId) {
+      filtered = filtered.filter((q) => String(q.courseId) === String(params.courseId));
+    }
+
+    if (filtered.length === 0 && params.lessonId) {
+      const isPre = String(params.lessonId).toLowerCase().includes("pre");
+      filtered = [
+        {
+          id: params.lessonId,
+          courseId: params.courseId || "crs-ai-101",
+          lessonId: params.lessonId,
+          title: isPre ? "Pre-Course Diagnostic Assessment" : "Post-Course Certification Assessment",
+          quizType: isPre ? "PRE_ASSESSMENT" : "POST_ASSESSMENT",
+          description: isPre ? "Baseline diagnostic assessment evaluating prior knowledge." : "Final certification mastery exam.",
+          passingScore: 70,
+          timeLimitMinutes: 10,
+          timed: true,
+          allowRetry: true,
+          maxAttempts: 3,
+          quizQuestions: STATIC_QUIZZES[0]?.quizQuestions || [],
+        } as any,
+      ];
+    }
+
+    return createMockResponse(config, {
+      success: true,
+      data: filtered,
+      items: filtered,
+      total: filtered.length,
+    });
+  }
+
+  // Quiz attempts management
+  if (url.startsWith("/quizattempt") || url.startsWith("/quiz-attempt")) {
+    let attempts: any[] = [];
+    try {
+      const stored = localStorage.getItem("nexus_mock_quiz_attempts");
+      if (stored) attempts = JSON.parse(stored);
+    } catch {}
+
+    // Resume attempt
+    if (url.includes("/resume")) {
+      const params = config.params || {};
+      const active = attempts.find((a) => (params.quizId ? a.quizId === params.quizId : true) && a.status === "IN_PROGRESS");
+      return createMockResponse(config, { success: true, data: active || null });
+    }
+
+    // Attempt Result
+    if (url.includes("/result")) {
+      const parts = url.split("?")[0].split("/").filter(Boolean);
+      const attemptId = parts[parts.indexOf("quizattempt") + 1] || parts[parts.indexOf("quiz-attempt") + 1] || "mock-attempt-1";
+      const attempt = attempts.find((a) => a.id === attemptId) || {
+        id: attemptId,
+        quizId: "quiz-pre-crs-ai-101",
+        score: 90,
+        status: "COMPLETED",
+      };
+      const quiz = STATIC_QUIZZES.find((q) => q.id === attempt.quizId) || STATIC_QUIZZES[0];
+
+      return createMockResponse(config, {
+        success: true,
+        data: {
+          id: attemptId,
+          quizId: attempt.quizId,
+          score: attempt.score ?? 90,
+          percentage: attempt.score ?? 90,
+          passed: (attempt.score ?? 90) >= (quiz?.passingScore || 70),
+          passFailStatus: "PASS",
+          totalQuestions: quiz?.quizQuestions?.length || 10,
+          correctAnswers: 9,
+          wrongAnswers: 1,
+          timeSpentSeconds: attempt.timeSpentSeconds || 145,
+          quiz,
+        },
+      });
+    }
+
+    // Abandon attempt
+    if (url.includes("/abandon")) {
+      return createMockResponse(config, { success: true, message: "Attempt abandoned" });
+    }
+
+    // Pause attempt
+    if (url.includes("/pause")) {
+      return createMockResponse(config, { success: true, message: "Attempt paused" });
+    }
+
+    // POST: Create attempt
+    if (method === "POST") {
+      const newAttempt = {
+        id: `attempt-${Date.now()}`,
+        quizId: body.quizId || "quiz-pre-crs-ai-101",
+        userId: body.userId || "usr-1",
+        status: "IN_PROGRESS",
+        startedAt: new Date().toISOString(),
+        score: null,
+        answers: [],
+        timeSpentSeconds: 0,
+      };
+      attempts.push(newAttempt);
+      try {
+        localStorage.setItem("nexus_mock_quiz_attempts", JSON.stringify(attempts));
+      } catch {}
+      return createMockResponse(config, {
+        success: true,
+        data: newAttempt,
+        attempt: newAttempt,
+      });
+    }
+
+    // GET: List attempts
+    const params = config.params || {};
+    let filteredAttempts = [...attempts];
+    if (params.quizId) {
+      filteredAttempts = filteredAttempts.filter((a) => a.quizId === params.quizId);
+    }
+    if (params.userId) {
+      filteredAttempts = filteredAttempts.filter((a) => a.userId === params.userId);
+    }
+
+    return createMockResponse(config, {
+      success: true,
+      data: filteredAttempts,
+      items: filteredAttempts,
+    });
+  }
+
+  // Quiz answer submission
+  if (url.startsWith("/quizanswer")) {
+    if (method === "POST") {
+      return createMockResponse(config, {
+        success: true,
+        message: "Answer recorded",
+        data: { recorded: true },
+      });
+    }
+  }
+
+  // Quiz Final Submit
+  if (url.includes("/quizsubmit") || url.includes("/submit")) {
+    const parts = url.split("?")[0].split("/").filter(Boolean);
+    const attemptId = parts[parts.indexOf("attempt") + 1] || `attempt-${Date.now()}`;
+
+    let attempts: any[] = [];
+    try {
+      const stored = localStorage.getItem("nexus_mock_quiz_attempts");
+      if (stored) attempts = JSON.parse(stored);
+    } catch {}
+
+    const idx = attempts.findIndex((a) => a.id === attemptId);
+    if (idx !== -1) {
+      attempts[idx].status = "COMPLETED";
+      attempts[idx].submittedAt = new Date().toISOString();
+      attempts[idx].score = 90;
+      attempts[idx].passed = true;
+    } else {
+      attempts.push({
+        id: attemptId,
+        quizId: "quiz-pre-crs-ai-101",
+        status: "COMPLETED",
+        submittedAt: new Date().toISOString(),
+        score: 90,
+        passed: true,
+      });
+    }
+    try {
+      localStorage.setItem("nexus_mock_quiz_attempts", JSON.stringify(attempts));
+    } catch {}
+
+    return createMockResponse(config, {
+      success: true,
+      isPassed: true,
+      passed: true,
+      score: 90,
+      percentage: 90,
+      totalQuestions: 10,
+      correctAnswers: 9,
+      wrongAnswers: 1,
+      attemptId,
+      data: {
+        id: attemptId,
+        score: 90,
+        percentage: 90,
+        passed: true,
+        isPassed: true,
+        passFailStatus: "PASS",
+        totalQuestions: 10,
+        correctAnswers: 9,
+      },
     });
   }
 
@@ -706,14 +1012,256 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
   }
 
   // -------------------------------------------------------------
-  // 8. CERTIFICATES
+  // 8. CERTIFICATES & CREDENTIAL VERIFICATION
   // -------------------------------------------------------------
 
-  if (url.includes("/certificate") || url.includes("/certificates")) {
+  if (url.includes("/certificate") || url.includes("/certificates") || url.includes("/verify")) {
+    let dynamicCerts: any[] = [];
+    try {
+      const stored = localStorage.getItem("nexus_mock_certificates");
+      if (stored) dynamicCerts = JSON.parse(stored);
+    } catch {}
+
+    const allCertsMap = new Map<string, any>();
+    STATIC_CERTIFICATES.forEach((c) => allCertsMap.set(c.id, c));
+    dynamicCerts.forEach((c) => allCertsMap.set(c.id, c));
+    const allCerts = Array.from(allCertsMap.values());
+
+    // 8a. Download Certificate PDF Blob
+    if (url.includes("/download") || config.responseType === "blob") {
+      const parts = url.split("?")[0].split("/").filter(Boolean);
+      const certId = parts[parts.indexOf("certificates") + 1] || parts[0];
+      const found = allCerts.find(
+        (c) => c.id === certId || c.courseId === certId || c.serialNumber === certId || c.course?.id === certId
+      ) || allCerts[0];
+
+      const blob = createMockPdfBlob(
+        found?.courseTitle || found?.course?.title || "Operational Standards Course",
+        found?.recipientName || "Alex Johnson",
+        found?.serialNumber || "NX-2026-CERT-01"
+      );
+
+      return {
+        data: blob,
+        status: 200,
+        statusText: "OK",
+        headers: { "content-type": "application/pdf" },
+        config,
+        request: {},
+      };
+    }
+
+    // 8b. Public Verification Check (/certificates/verify/:serialNumber or /verify/:serialNumber)
+    if (url.includes("/verify")) {
+      const parts = url.split("?")[0].split("/").filter(Boolean);
+      const serial = parts[parts.length - 1];
+      const cert = allCerts.find(
+        (c) =>
+          c.serialNumber === serial ||
+          c.id === serial ||
+          c.courseId === serial ||
+          c.course?.id === serial ||
+          c.careerPathId === serial
+      ) || allCerts[0];
+
+      return createMockResponse(config, {
+        success: true,
+        data: {
+          serialNumber: cert.serialNumber || serial,
+          recipientName: cert.recipientName || "Alex Johnson",
+          courseTitle: cert.courseTitle || cert.course?.title || "Commercial Cleaning Operational Standards",
+          issuedAt: cert.issuedAt || new Date().toISOString(),
+          isRevoked: false,
+          revokedAt: null,
+          issuer: cert.issuer || "Nexus Operational Standards Institute",
+        },
+      });
+    }
+
+    // 8c. Public Certificate Preview (/certificates/public/:token)
+    if (url.includes("/public/")) {
+      const parts = url.split("?")[0].split("/").filter(Boolean);
+      const token = parts[parts.length - 1];
+      const cert = allCerts.find(
+        (c) =>
+          c.verification?.verificationToken === token ||
+          c.id === token ||
+          c.serialNumber === token ||
+          c.courseId === token
+      ) || allCerts[0];
+
+      return createMockResponse(config, {
+        success: true,
+        data: {
+          serialNumber: cert.serialNumber,
+          certificateId: cert.id,
+          recipientName: cert.recipientName || "Alex Johnson",
+          courseTitle: cert.courseTitle || cert.course?.title || "Professional SOP Training",
+          issuedAt: cert.issuedAt,
+          isRevoked: false,
+          revokedAt: null,
+          issuer: cert.issuer || "Nexus Operational Standards Institute",
+        },
+      });
+    }
+
+    // 8d. Eligibility Check (/certificates/eligibility/:userId/:courseId)
+    if (url.includes("/eligibility")) {
+      return createMockResponse(config, {
+        success: true,
+        data: {
+          eligible: true,
+          courseCompleted: true,
+          quizPassed: true,
+          profileCompleted: true,
+          missingItems: [],
+        },
+      });
+    }
+
+    // 8e. Name Confirmation (/certificates/name-confirmation/:userId)
+    if (url.includes("/name-confirmation")) {
+      return createMockResponse(config, {
+        success: true,
+        data: {
+          name: "Alex Johnson",
+          isConfirmed: true,
+        },
+      });
+    }
+
+    // 8f. Confirm and Generate Certificate (/certificates/confirm-and-generate)
+    if (url.includes("/confirm-and-generate") || (method === "POST" && url.includes("/generate"))) {
+      const courseId = body.courseId || "crs-ai-101";
+      const confirmedName = body.confirmedName || body.name || "Alex Johnson";
+      const course = STATIC_COURSES.find((c) => c.id === courseId) || STATIC_COURSES[0];
+      const existing = allCerts.find((c) => c.courseId === courseId || c.course?.id === courseId);
+
+      const updatedCert = {
+        ...(existing || STATIC_CERTIFICATES[0]),
+        id: existing?.id || `cert-${courseId}`,
+        courseId,
+        courseTitle: course?.title || existing?.courseTitle || "Professional Training Course",
+        recipientName: confirmedName,
+        issuedAt: existing?.issuedAt || new Date().toISOString(),
+        serialNumber: existing?.serialNumber || `NX-2026-${courseId.slice(0, 6).toUpperCase()}-${Math.floor(100000 + Math.random() * 900000)}`,
+        status: "ACTIVE",
+        user: {
+          id: body.userId || "usr-1",
+          email: "member@nexus.org",
+          profile: {
+            firstName: confirmedName.split(" ")[0] || "Alex",
+            lastName: confirmedName.split(" ").slice(1).join(" ") || "Johnson",
+            certificateName: confirmedName,
+            titlePrefix: null,
+          },
+        },
+        course: {
+          id: courseId,
+          title: course?.title || "Professional Training Course",
+          careerPaths: [],
+        },
+        verification: {
+          isRevoked: false,
+          revokedAt: null,
+          publicUrl: `/verify/${existing?.serialNumber || 'NX-2026-CERT'}`,
+          verificationToken: `tok-${courseId}`,
+        },
+      };
+
+      const existIdx = dynamicCerts.findIndex((c) => c.courseId === courseId);
+      if (existIdx !== -1) {
+        dynamicCerts[existIdx] = updatedCert;
+      } else {
+        dynamicCerts.push(updatedCert);
+      }
+      try {
+        localStorage.setItem("nexus_mock_certificates", JSON.stringify(dynamicCerts));
+      } catch {}
+
+      return createMockResponse(config, {
+        success: true,
+        message: "Certificate generated successfully",
+        data: updatedCert,
+      });
+    }
+
+    // 8g. Specific Certificate by ID (/certificates/:id)
+    const parts = url.split("?")[0].split("/").filter(Boolean);
+    if (parts.length >= 2 && parts[0] === "certificates" && parts[1] !== "user" && parts[1] !== "eligibility" && parts[1] !== "name-confirmation" && parts[1] !== "confirm-and-generate") {
+      const certId = parts[1];
+      let cert = allCerts.find(
+        (c) =>
+          c.id === certId ||
+          c.courseId === certId ||
+          c.course?.id === certId ||
+          c.careerPathId === certId ||
+          c.career_path_id === certId ||
+          c.serialNumber === certId
+      );
+
+      // If requested for a course that doesn't have a static cert yet, generate a clean one on the fly
+      if (!cert && (certId.startsWith("crs-") || certId.startsWith("cp-"))) {
+        const course = STATIC_COURSES.find((c) => c.id === certId);
+        const cp = STATIC_CAREER_PATHS.find((p) => p.id === certId);
+        const title = course?.title || cp?.title || "Professional Operations Standards";
+
+        cert = {
+          id: `cert-${certId}`,
+          courseId: course ? certId : undefined,
+          careerPathId: cp ? certId : undefined,
+          career_path_id: cp ? certId : undefined,
+          serialNumber: `NX-2026-${certId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 5).toUpperCase()}-${Math.floor(100000 + Math.random() * 900000)}`,
+          courseTitle: title,
+          recipientName: "Alex Johnson",
+          recipientEmail: "member@nexus.org",
+          issuedAt: new Date().toISOString(),
+          expiryDate: "2029-12-31T23:59:59Z",
+          credentialUrl: `https://nexusacademy.org/verify/cert-${certId}`,
+          status: "ACTIVE",
+          grade: "98%",
+          issuer: "Nexus Operational Standards Institute",
+          user: {
+            id: "usr-1",
+            email: "member@nexus.org",
+            profile: {
+              firstName: "Alex",
+              lastName: "Johnson",
+              certificateName: "Alex Johnson",
+              titlePrefix: null,
+            },
+          },
+          course: course ? { id: certId, title, careerPaths: [] } : undefined,
+          career_paths: cp ? { id: certId, title } : undefined,
+          verification: {
+            isRevoked: false,
+            revokedAt: null,
+            publicUrl: `/verify/${certId}`,
+            verificationToken: `tok-${certId}`,
+          },
+          logs: [],
+        };
+      }
+
+      if (cert) {
+        return createMockResponse(config, {
+          success: true,
+          data: cert,
+          certificate: cert,
+        });
+      }
+    }
+
+    // 8h. User Certificates List (/certificates/user/:userId or /certificates)
     return createMockResponse(config, {
       success: true,
-      data: STATIC_CERTIFICATES,
-      certificates: STATIC_CERTIFICATES,
+      data: allCerts,
+      items: allCerts,
+      certificates: allCerts,
+      total: allCerts.length,
+      page: 1,
+      limit: 50,
+      totalPages: 1,
     });
   }
 
