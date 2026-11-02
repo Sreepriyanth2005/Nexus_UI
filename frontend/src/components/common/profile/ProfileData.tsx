@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 import ProfileVerifyOTP from "./ProfileVerifyOTP";
 import "./ProfileData.css";
 
@@ -9,15 +10,54 @@ import { useProfileCertificates } from "../../../hooks/profile/useProfileCertifi
 import { useProfileOnboarding } from "../../../hooks/profile/useProfileOnboarding";
 import { useAssets } from "../../../hooks/asset/useAssets";
 import { useSkills } from "../../../hooks/useMaster";
-import { useLearningStatistics, useProgressDashboard, useMemberLearningCourses } from "../../../hooks/member-learning/memberLearning";
+import {
+  useLearningStatistics,
+  useProgressDashboard,
+  useMemberLearningCourses,
+} from "../../../hooks/member-learning/memberLearning";
 
-import type { UpdateProfileRequest, CareerHistory, PersonalLink, } from "../../../types/profile.type";
+import type { UpdateProfileRequest, CareerHistory, PersonalLink } from "../../../types/profile.type";
 
 import { Country } from "country-state-city";
 import parsePhoneNumberFromString from "libphonenumber-js";
 import CareerHistorySection from "./modals/CareerHistorySection";
-import { Loader2, X } from "lucide-react";
 import LanguageList from "language-list";
+
+// Lucide icons
+import {
+  Loader2,
+  X,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Globe,
+  Calendar,
+  Award,
+  BookOpen,
+  Clock,
+  Briefcase,
+  Link2,
+  FileText,
+  Upload,
+  Trash2,
+  Edit3,
+  Check,
+  CheckCircle2,
+  AlertCircle,
+  Camera,
+  Sparkles,
+  ShieldCheck,
+  ExternalLink,
+  Plus,
+  ChevronRight,
+  Copy,
+  GraduationCap,
+  Building2,
+  Download,
+  ArrowRight,
+  Lock,
+} from "lucide-react";
 
 type TabId = "personal" | "professional" | "links" | "documents";
 
@@ -45,9 +85,9 @@ type FormState = {
 };
 
 const MISSING_FIELD_LABELS: Record<string, string> = {
-  fullName: "Add First and Last Name",
+  fullName: "Add First & Last Name",
   country: "Select Country",
-  certificateName: "Add Certificate Name",
+  certificateName: "Add Diploma Name",
   titlePrefix: "Select Title Prefix",
   city: "Add City",
   dob: "Add Date of Birth",
@@ -56,18 +96,18 @@ const MISSING_FIELD_LABELS: Record<string, string> = {
   currentRole: "Add Current Role",
   experienceLevel: "Select Experience Level",
   industry: "Select Industry",
-  educationCompletionYear: "Add Education Completion Year",
-  portfolioUrl: "Add a Personal Site / Blog",
-  websiteUrl: "Add a Website URL",
-  photo: "Add Profile Photo",
-  resume: "Upload Resume",
+  educationCompletionYear: "Add Graduation Year",
+  portfolioUrl: "Add Portfolio URL",
+  websiteUrl: "Add Website URL",
+  photo: "Upload Profile Photo",
+  resume: "Upload CV / Resume",
 };
 
-const tabs: Array<{ id: TabId; label: string }> = [
-  { id: "personal", label: "Personal" },
-  { id: "professional", label: "Professional" },
-  { id: "links", label: "Personal links" },
-  { id: "documents", label: "Documents" },
+const tabs: Array<{ id: TabId; label: string; icon: any }> = [
+  { id: "personal", label: "Personal", icon: User },
+  { id: "professional", label: "Professional", icon: Briefcase },
+  { id: "links", label: "Personal Links", icon: Link2 },
+  { id: "documents", label: "Documents", icon: FileText },
 ];
 
 const emptyForm: FormState = {
@@ -136,12 +176,15 @@ const toTitle = (value?: string) =>
   (value || "").toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 
 const extractFilename = (url?: string) => {
-  if (!url) return "Uploaded";
+  if (!url) return "Uploaded Document";
   try {
-    let filename = url.split('?')[0].split('/').pop() || "Uploaded";
-    filename = filename.replace(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}-/, '');
+    let filename = url.split("?")[0].split("/").pop() || "Uploaded Document";
+    filename = filename.replace(
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}-/,
+      ""
+    );
     return decodeURIComponent(filename);
-  } catch (e) {
+  } catch {
     return "Document";
   }
 };
@@ -165,7 +208,8 @@ const ProfileData: React.FC = () => {
   const { uploadPhoto, uploadResume, deletePhoto, deleteResume } = useProfileAssets();
   const { profile, getProfile, saveProfile, loading, completion, getCompletion } = useProfile();
   const { data: skills = [], isLoading: skillsLoading } = useSkills();
-  const { uploadCertificate, deleteCertificate, certificates, refreshCertificates } = useProfileCertificates();
+  const { uploadCertificate, deleteCertificate, certificates, refreshCertificates } =
+    useProfileCertificates();
   const { uploadAsset } = useAssets();
   const { getOnboarding } = useProfileOnboarding();
 
@@ -186,7 +230,7 @@ const ProfileData: React.FC = () => {
     if (!memberLearningData?.data) return [];
     return memberLearningData.data
       .filter((c: any) => c.statusText === "Completed" || c.statusText === "In progress")
-      .slice(0, 3);
+      .slice(0, 4);
   }, [memberLearningData]);
 
   const [activeTab, setActiveTab] = useState<TabId>("personal");
@@ -195,13 +239,14 @@ const ProfileData: React.FC = () => {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [extraLinks, setExtraLinks] = useState<PersonalLink[]>([{ title: "", url: "" }]);
+  const [extraLinks, setExtraLinks] = useState<PersonalLink[]>([{ title: "LinkedIn", url: "" }]);
   const [careerHistory, setCareerHistory] = useState<CareerHistory[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [photoUploading, setPhotoUploading] = useState(false);
   const [resumeUploading, setResumeUploading] = useState(false);
   const [certificateUploading, setCertificateUploading] = useState(false);
   const [showOTPModal, setShowOTPModal] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   // Local state for skills and language
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
@@ -210,17 +255,22 @@ const ProfileData: React.FC = () => {
   const [learningInterests, setLearningInterests] = useState<string[]>([]);
   const [learningInterestInput, setLearningInterestInput] = useState("");
 
-  const [documents, setDocuments] = useState<any[]>([]);
-
   const normalizedSkillQuery = skillQuery.trim().toLowerCase();
   const filteredSkills = skills
-    .filter((skill) => !selectedSkills.some((selected) => selected.toLowerCase() === skill.name.toLowerCase()))
+    .filter(
+      (skill) =>
+        !selectedSkills.some((selected) => selected.toLowerCase() === skill.name.toLowerCase())
+    )
     .filter((skill) => !normalizedSkillQuery || skill.name.toLowerCase().includes(normalizedSkillQuery))
     .slice(0, 12);
 
   const addSkill = (name: string) => {
     const trimmedName = name.trim();
-    if (!trimmedName || selectedSkills.some((selected) => selected.toLowerCase() === trimmedName.toLowerCase())) return;
+    if (
+      !trimmedName ||
+      selectedSkills.some((selected) => selected.toLowerCase() === trimmedName.toLowerCase())
+    )
+      return;
     setSelectedSkills((current) => [...current, trimmedName]);
     setSkillQuery("");
     setSkillsOpen(false);
@@ -235,8 +285,6 @@ const ProfileData: React.FC = () => {
   useEffect(() => {
     if (!profile) return;
 
-    // If the user is actively editing, only update asset URLs
-    // so that photo/resume uploads don't wipe out unsaved form changes
     if (isEditing) {
       const p = profile.profile || {};
       setForm((prev) => ({
@@ -262,12 +310,14 @@ const ProfileData: React.FC = () => {
       countryName: p.countryName || "",
       phoneCountryCode: p.phoneCountryCode || "+91",
       mobileNumber: p.mobileNumber || "",
-      preferredLanguage: profile.preferences?.preferredLanguage || "",
+      preferredLanguage: profile.preferences?.preferredLanguage || "English",
       currentRole: prof.currentRole || "",
       currentEmployer: prof.currentEmployer || "",
       experienceLevel: prof.experienceLevel || "",
       industry: prof.industry || "",
-      educationCompletionYear: prof.educationCompletionYear ? prof.educationCompletionYear.toString() : "",
+      educationCompletionYear: prof.educationCompletionYear
+        ? prof.educationCompletionYear.toString()
+        : "",
       websiteUrl: p.websiteUrl || "",
       portfolioUrl: prof.portfolioUrl || "",
       photoUrl: p.photoUrl || "",
@@ -275,7 +325,9 @@ const ProfileData: React.FC = () => {
     });
 
     setPhotoPreview(p.photoUrl || "");
-    setExtraLinks(profile.personalLinks?.length ? profile.personalLinks : [{ title: "", url: "" }]);
+    setExtraLinks(
+      profile.personalLinks?.length ? profile.personalLinks : [{ title: "LinkedIn", url: "" }]
+    );
     setCareerHistory(profile.professionalProfile?.careerHistory || []);
     setSelectedSkills(profile.skills?.map((item) => item.name) || []);
     setLearningInterests(profile.learningInterests?.map((item) => item.name) || []);
@@ -292,7 +344,7 @@ const ProfileData: React.FC = () => {
         }))
       );
     }
-  }, [profile, refreshCertificates])
+  }, [profile, refreshCertificates, isEditing]);
 
   useEffect(() => {
     getCompletion();
@@ -320,57 +372,56 @@ const ProfileData: React.FC = () => {
   }, [careerHistory]);
 
   const fullName =
-    [profile?.profile?.firstName, profile?.profile?.lastName]
-      .filter(Boolean)
-      .join(" ") ||
-    [form.firstName, form.lastName]
-      .filter(Boolean)
-      .join(" ") ||
-    "Profile";
+    [profile?.profile?.firstName, profile?.profile?.lastName].filter(Boolean).join(" ") ||
+    [form.firstName, form.lastName].filter(Boolean).join(" ") ||
+    "Member Profile";
 
   const completed = Number(profile?.profileCompleteness || 0);
 
-  const getTabProgress = useCallback((tabId: TabId): string => {
-    switch (tabId) {
-      case "personal":
-        let filled = 0;
-        if (form.firstName) filled++;
-        if (form.lastName) filled++;
-        if (form.certificateName) filled++;
-        if (form.dob) filled++;
-        if (form.gender) filled++;
-        if (form.city) filled++;
-        if (form.countryName) filled++;
-        if (form.mobileNumber) filled++;
-        if (form.photoUrl) filled++;
-        return `${filled}/9`;
-      case "professional":
-        let pfilled = 0;
-        if (form.currentRole) pfilled++;
-        if (form.currentEmployer) pfilled++;
-        if (form.experienceLevel) pfilled++;
-        if (form.industry) pfilled++;
-        if (form.educationCompletionYear) pfilled++;
-        if (selectedSkills.length > 0) pfilled++;
-        if (learningInterests.length > 0) pfilled++;
-        return `${pfilled}/7`;
-      case "links":
-        let lfilled = 0;
-        if (form.portfolioUrl) lfilled++;
-        if (extraLinks.some((l) => cleanUrl(l.url))) lfilled++;
-        return `${lfilled}/2`;
-      case "documents":
-        let d = 0;
-        if (form.resumeUrl) d++;
-        if (certificates.length > 0) d++;
-        return `${d}/2`;
-      default:
-        return "0/1";
-    }
-  }, [form, extraLinks, certificates]);
+  const getTabProgress = useCallback(
+    (tabId: TabId): string => {
+      switch (tabId) {
+        case "personal":
+          let filled = 0;
+          if (form.firstName) filled++;
+          if (form.lastName) filled++;
+          if (form.certificateName) filled++;
+          if (form.dob) filled++;
+          if (form.gender) filled++;
+          if (form.city) filled++;
+          if (form.countryName) filled++;
+          if (form.mobileNumber) filled++;
+          if (form.photoUrl) filled++;
+          return `${filled}/9`;
+        case "professional":
+          let pfilled = 0;
+          if (form.currentRole) pfilled++;
+          if (form.currentEmployer) pfilled++;
+          if (form.experienceLevel) pfilled++;
+          if (form.industry) pfilled++;
+          if (form.educationCompletionYear) pfilled++;
+          if (selectedSkills.length > 0) pfilled++;
+          if (learningInterests.length > 0) pfilled++;
+          return `${pfilled}/7`;
+        case "links":
+          let lfilled = 0;
+          if (form.portfolioUrl) lfilled++;
+          if (extraLinks.some((l) => cleanUrl(l.url))) lfilled++;
+          return `${lfilled}/2`;
+        case "documents":
+          let d = 0;
+          if (form.resumeUrl) d++;
+          if (certificates.length > 0) d++;
+          return `${d}/2`;
+        default:
+          return "0/1";
+      }
+    },
+    [form, extraLinks, certificates, selectedSkills, learningInterests]
+  );
 
-  const updateField = (field: keyof FormState) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const updateField =
+    (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
     };
 
@@ -379,38 +430,28 @@ const ProfileData: React.FC = () => {
       e.preventDefault();
       const val = learningInterestInput.trim();
       if (val && !learningInterests.some((item) => item.toLowerCase() === val.toLowerCase())) {
-        setLearningInterests(prev => [...prev, val]);
+        setLearningInterests((prev) => [...prev, val]);
       }
       setLearningInterestInput("");
     }
   };
 
   const removeLearningInterest = (interest: string) => {
-    setLearningInterests(prev => prev.filter(item => item !== interest));
+    setLearningInterests((prev) => prev.filter((item) => item !== interest));
   };
 
   const handleLinkChange = (index: number, field: "title" | "url", value: string) => {
-    setExtraLinks(prev =>
-      prev.map((link, idx) =>
-        idx === index
-          ? { ...link, [field]: value }
-          : link
-      )
+    setExtraLinks((prev) =>
+      prev.map((link, idx) => (idx === index ? { ...link, [field]: value } : link))
     );
   };
 
   const handleAddLink = () => {
-    setExtraLinks(prev => [
-      ...prev,
-      {
-        title: "",
-        url: "",
-      },
-    ]);
+    setExtraLinks((prev) => [...prev, { title: "Website", url: "" }]);
   };
 
   const handleRemoveLink = (index: number) => {
-    setExtraLinks(prev => prev.filter((_, idx) => idx !== index));
+    setExtraLinks((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const handleSave = async () => {
@@ -431,7 +472,7 @@ const ProfileData: React.FC = () => {
       }
 
       if (!phoneNum?.isValid()) {
-        setError("Invalid mobile number format");
+        setError("Invalid mobile number format. Please check digits and try again.");
         setSaving(false);
         return;
       }
@@ -446,7 +487,6 @@ const ProfileData: React.FC = () => {
     if (form.dob) {
       const dob = new Date(form.dob);
       const today = new Date();
-
       today.setHours(0, 0, 0, 0);
       dob.setHours(0, 0, 0, 0);
 
@@ -458,7 +498,7 @@ const ProfileData: React.FC = () => {
 
       const age = (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
       if (age < 13) {
-        setError("User must be at least 13 years old.");
+        setError("User must be at least 13 years of age.");
         setSaving(false);
         return;
       }
@@ -481,15 +521,20 @@ const ProfileData: React.FC = () => {
         currentEmployer: form.currentEmployer.trim() || null,
         experienceLevel: (form.experienceLevel as any) || null,
         industry: form.industry.trim() || null,
-        educationCompletionYear: form.educationCompletionYear ? parseInt(form.educationCompletionYear, 10) : null,
+        educationCompletionYear: form.educationCompletionYear
+          ? parseInt(form.educationCompletionYear, 10)
+          : null,
         websiteUrl: cleanUrl(form.websiteUrl) || null,
         portfolioUrl: cleanUrl(form.portfolioUrl) || null,
         skills: selectedSkills,
         learningInterests: learningInterests,
-        careerHistory: careerHistory.length > 0 ? careerHistory.map(ch => ({
-          ...ch,
-          endDate: ch.isCurrentJob ? undefined : (ch.endDate || undefined)
-        })) : undefined,
+        careerHistory:
+          careerHistory.length > 0
+            ? careerHistory.map((ch) => ({
+                ...ch,
+                endDate: ch.isCurrentJob ? undefined : ch.endDate || undefined,
+              }))
+            : undefined,
         personalLinks: extraLinks
           .map(normalizePersonalLink)
           .filter((link): link is PersonalLink => Boolean(link)),
@@ -505,6 +550,7 @@ const ProfileData: React.FC = () => {
 
       await getProfile();
       setNotice("Profile updated successfully.");
+      toast.success("Profile updated successfully!");
       setIsEditing(false);
     } catch (err: any) {
       const data = err.response?.data;
@@ -513,23 +559,19 @@ const ProfileData: React.FC = () => {
           const field = i.path[i.path.length - 1];
           return `${field}: ${i.message}`;
         });
-        setError(`Validation failed -> ${messages.join(" | ")}`);
+        setError(`Validation failed: ${messages.join(" | ")}`);
+        toast.error(`Validation failed: ${messages[0]}`);
       } else {
-        setError(
-          data?.message ??
-          err.message ??
-          "Failed to save profile"
-        );
+        const msg = data?.message ?? err.message ?? "Failed to save profile";
+        setError(msg);
+        toast.error(msg);
       }
     } finally {
       setSaving(false);
     }
   };
 
-
-  const handlePhotoUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -537,7 +579,6 @@ const ProfileData: React.FC = () => {
       setPhotoUploading(true);
       setError("");
 
-      // Show instant local preview
       const localPreview = URL.createObjectURL(file);
       setPhotoPreview(localPreview);
 
@@ -550,18 +591,15 @@ const ProfileData: React.FC = () => {
       const asset = await uploadAsset(formData);
       const updatedProfile = await uploadPhoto(asset.id);
 
-      // Update only the photo URL in form state without refetching the full profile
       const newPhotoUrl = updatedProfile?.profile?.photoUrl || localPreview;
       setPhotoPreview(newPhotoUrl);
       setForm((prev) => ({ ...prev, photoUrl: newPhotoUrl }));
+      toast.success("Profile photo updated successfully!");
     } catch (err: any) {
-      // Revert preview on failure
       setPhotoPreview(form.photoUrl);
-      setError(
-        err.response?.data?.message ??
-        err.message ??
-        "Failed to upload photo"
-      );
+      const msg = err.response?.data?.message ?? err.message ?? "Failed to upload photo";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setPhotoUploading(false);
     }
@@ -572,21 +610,19 @@ const ProfileData: React.FC = () => {
       setPhotoUploading(true);
       setError("");
       await deletePhoto();
-
       setPhotoPreview("");
       setForm((prev) => ({ ...prev, photoUrl: "" }));
-      await getProfile(); // Optional: ensure the backend state is in sync
+      await getProfile();
+      toast.success("Profile photo removed");
     } catch (err: any) {
       setError(err.message || "Failed to delete photo");
+      toast.error("Failed to delete photo");
     } finally {
       setPhotoUploading(false);
     }
   };
 
-
-  const handleResumeUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -601,23 +637,19 @@ const ProfileData: React.FC = () => {
       formData.append("storagePath", "documents");
 
       const asset = await uploadAsset(formData);
-
       await uploadResume(asset.id);
       await getProfile();
+      toast.success("Resume uploaded successfully!");
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ??
-        err.message ??
-        "Failed to upload resume"
-      );
+      const msg = err.response?.data?.message ?? err.message ?? "Failed to upload resume";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setResumeUploading(false);
     }
   };
 
-  const handleDocumentUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -635,9 +667,10 @@ const ProfileData: React.FC = () => {
 
         const asset = await uploadAsset(formData);
 
-        const safeTitle = file.name.length < 2
-          ? `${file.name} Certificate`
-          : file.name.length > 200
+        const safeTitle =
+          file.name.length < 2
+            ? `${file.name} Certificate`
+            : file.name.length > 200
             ? file.name.substring(0, 195) + "..."
             : file.name;
 
@@ -648,22 +681,24 @@ const ProfileData: React.FC = () => {
       }
 
       await getProfile();
+      toast.success("Certificate(s) uploaded successfully!");
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ??
-        err.message ??
-        "Failed to upload certificate"
-      );
+      const msg = err.response?.data?.message ?? err.message ?? "Failed to upload certificate";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setCertificateUploading(false);
     }
   };
 
-  const publicSlug = useMemo(() => {
-    return profile?.id
-      ? `/profile/${profile.id}`
-      : "";
-  }, [profile]);
+  const handleCopyPublicUrl = () => {
+    if (!profile?.id) return;
+    const fullUrl = `${window.location.origin}/profile/${profile.id}`;
+    navigator.clipboard.writeText(fullUrl);
+    setCopiedLink(true);
+    toast.success("Public profile link copied to clipboard!");
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
 
   const maxDobDate = useMemo(() => {
     const d = new Date();
@@ -671,965 +706,1357 @@ const ProfileData: React.FC = () => {
     return d.toISOString().split("T")[0];
   }, []);
 
-  console.log("photoUrl:", profile?.profile?.photoUrl);
-
-  // ==================== VIEW MODE - Updated to Match Screenshot ====================
   const handleTabClick = (tabId: TabId) => {
     setActiveTab(tabId);
     const element = document.getElementById(`section-${tabId}`);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
   if (loading && !profile) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="flex min-h-[450px] flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
+        <span className="text-xs font-semibold text-slate-400">Loading profile data...</span>
       </div>
     );
   }
 
+  // ==================== VIEW MODE ====================
   if (!isEditing) {
     return (
-      <div className="w-full max-w-full mx-auto min-h-full   flex flex-col md:flex-row gap-8 bg-white text-[#141414] items-start">
-        <style>{`
-          @keyframes pillColorBlink {
-            0%, 100% { color: #446038; }
-            50% { color: #7e9b6f; }
-          }
-          .animate-pill-color {
-            animation: pillColorBlink 2s ease-in-out infinite;
-          }
-        `}</style>
-        <aside className="w-full md:w-[280px] shrink-0 flex flex-col">
-          <div className="flex flex-col bg-white rounded-[10px] border border-[#d8d8d8] shadow-[0_1px_2px_#2a11080f] hover:-translate-y-1 hover:shadow-[0_8px_28px_-8px_#11111129] transition-all duration-300 px-6 pt-8 pb-6">
-            
-            {/* Header / Identity section */}
-            <div className="flex flex-col items-center text-center">
-              <div className="h-[104px] w-[104px] rounded-full bg-gray-100 flex items-center justify-center mb-4 overflow-hidden relative border border-[#f0f0f0]">
+      <div className="w-full max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-8 items-start min-h-screen text-slate-900 dark:text-slate-100">
+        {/* Left Sidebar */}
+        <aside className="w-full lg:w-[320px] shrink-0 space-y-6">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 flex flex-col items-center text-center">
+            {/* Avatar */}
+            <div className="relative mb-4 group">
+              <div className="w-24 h-24 rounded-2xl bg-amber-100 dark:bg-amber-950/50 border-2 border-white dark:border-slate-800 shadow-md overflow-hidden flex items-center justify-center">
                 {profile?.profile?.photoUrl ? (
-                  <img src={profile?.profile?.photoUrl} alt={fullName} className="h-full w-full object-cover" />
+                  <img
+                    src={profile.profile.photoUrl}
+                    alt={fullName}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
-                  <span className="text-gray-400 text-xs font-semibold">Photo</span>
+                  <span className="text-2xl font-black text-amber-700 dark:text-amber-400">
+                    {fullName.charAt(0).toUpperCase()}
+                  </span>
                 )}
               </div>
-              <h2 className="font-bold text-[20px]text-[#141414] mb-1">{fullName}</h2>
-              <div className="text-[12px] font-medium text-[#5c5c5c] mb-4 tracking-wide">
-                {form.currentRole || "Professional"}
-                {calculateAge(form.dob) !== null && ` · ${calculateAge(form.dob)} yrs`}
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-xs">
+                <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
+              </div>
+            </div>
+
+            {/* Name & Title */}
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
+              {fullName}
+            </h2>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap justify-center">
+              <span>{form.currentRole || "Operations Specialist"}</span>
+              {calculateAge(form.dob) !== null && (
+                <>
+                  <span>&bull;</span>
+                  <span>{calculateAge(form.dob)} yrs</span>
+                </>
+              )}
+              {form.countryName && (
+                <>
+                  <span>&bull;</span>
+                  <span>{form.countryName}</span>
+                </>
+              )}
+            </p>
+
+            {/* Completeness Ring */}
+            <div className="mt-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-850/60 border border-slate-100 dark:border-slate-800 w-full flex flex-col items-center">
+              <div className="relative w-20 h-20 flex items-center justify-center mb-3">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 80 80">
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="34"
+                    stroke="currentColor"
+                    strokeWidth="7"
+                    fill="none"
+                    className="text-slate-200 dark:text-slate-700"
+                  />
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="34"
+                    stroke="currentColor"
+                    strokeWidth="7"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 34}`}
+                    strokeDashoffset={`${2 * Math.PI * 34 * (1 - completed / 100)}`}
+                    strokeLinecap="round"
+                    className={`transition-all duration-1000 ease-out ${
+                      completed >= 80 ? "text-emerald-500" : "text-amber-500"
+                    }`}
+                  />
+                </svg>
+                <span className="absolute text-base font-black text-slate-900 dark:text-white">
+                  {completed}%
+                </span>
               </div>
 
-              {/* Progress Circle */}
-              <div className="relative flex flex-col items-center justify-center mb-5">
-                <div className="relative w-[88px] h-[88px] mb-3 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 80 80">
-                    <circle cx="40" cy="40" r="36" stroke="#f0f0f0" strokeWidth="8" fill="none" />
-                    <circle 
-                      cx="40" 
-                      cy="40" 
-                      r="36" 
-                      stroke="#a17a22" 
-                      strokeWidth="8" 
-                      fill="none" 
-                      strokeDasharray={`${2 * Math.PI * 36}`} 
-                      strokeDashoffset={`${2 * Math.PI * 36 * (1 - completed / 100)}`}
-                      strokeLinecap="round"
-                      className="transition-all duration-1000 ease-in-out" 
-                    />
-                  </svg>
-                  <span className="absolute text-[16px] font-bold text-[#755a12]">{completed}%</span>
-                </div>
-  
-                {/* Pill & Text block */}
-                {completion?.missingFields && completion.missingFields.length > 0 ? (
-                  <div className="text-[12px] text-[#5c5c5c] mb-6 leading-[1.6] text-center w-full">
-                    <div className="flex justify-center items-center gap-2 mb-0.5 w-full">
-                      <span className="bg-[#dce5d3]  animate-pill-color text-[12px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-widest whitespace-nowrap">
-                        {completion.missingFields.length} STEP{completion.missingFields.length > 1 ? 'S' : ''} LEFT
-                      </span>
-                      <span className="whitespace-nowrap">
-                        {MISSING_FIELD_LABELS[completion.missingFields[0]] || completion.missingFields[0]}
-                      </span>
-                    </div>
-                    <div>link to reach 100%.</div>
-                  </div>
-                ) : (
-                  <div className="text-[12px] text-[#5c5c5c] mb-6 leading-[1.6] text-center w-full">
-                    <div className="text-[#a17a22] font-bold mb-0.5">Profile is 100% complete!</div>
-                    <div>You're all set.</div>
-                  </div>
-                )}
-  
-                {/* CTA Button */}
-                {completion?.missingFields && completion.missingFields.length > 0 && (
+              {/* Status Message */}
+              {completion?.missingFields && completion.missingFields.length > 0 ? (
+                <div className="space-y-2 text-center w-full">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                    <Sparkles className="w-3 h-3" />
+                    {completion.missingFields.length} Step
+                    {completion.missingFields.length > 1 ? "s" : ""} Remaining
+                  </span>
+                  <p className="text-[11px] text-slate-500 line-clamp-1">
+                    {MISSING_FIELD_LABELS[completion.missingFields[0]] || completion.missingFields[0]}
+                  </p>
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="w-full bg-(--btn) hover:bg-[#f1e699] border border-[#c99b2e8c] text-[#141414] rounded-full py-2.5 font-bold transition-all text-[16px] shadow-[0_1px_2px_#0000000a]"
+                    className="w-full mt-2 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5"
                   >
-                    Complete profile
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Complete Profile</span>
                   </button>
+                </div>
+              ) : (
+                <div className="text-center space-y-1">
+                  <div className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>100% Certified Profile</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">Fully verified for accredited diplomas</p>
+                </div>
+              )}
+            </div>
+
+            {/* Metrics List */}
+            <div className="w-full mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-3 text-left">
+              <div className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-850/40 border border-slate-100 dark:border-slate-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                  Enrolled
+                </span>
+                <span className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-1">
+                  <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+                  {learningStats?.enrolledCount || 0}
+                </span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-850/40 border border-slate-100 dark:border-slate-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                  Diplomas
+                </span>
+                <span className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-1">
+                  <Award className="w-3.5 h-3.5 text-amber-500" />
+                  {learningStats?.completedCount || 0}
+                </span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-850/40 border border-slate-100 dark:border-slate-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                  Completed
+                </span>
+                <span className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  {learningStats?.completedCount || 0}
+                </span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-850/40 border border-slate-100 dark:border-slate-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                  Hours Active
+                </span>
+                <span className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-indigo-500" />
+                  {dashboardData?.totalLearningTime
+                    ? (dashboardData.totalLearningTime / 3600).toFixed(1)
+                    : "0"}
+                  h
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Public Link */}
+            {profile?.id && (
+              <button
+                type="button"
+                onClick={handleCopyPublicUrl}
+                className="w-full mt-4 py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
+              >
+                {copiedLink ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5 text-slate-400" />
                 )}
-              </div>
-            </div>
-
-            {/* Divider */}
-            <hr className="w-full border-t border-[#f0f0f0] mt-6 mb-2" />
-
-            {/* Stats section */}
-            <div className="flex flex-col w-full text-left">
-              <div className="flex justify-between items-center py-3 border-b border-[#f0f0f0] text-[14px]">
-                <span className="text-[#5c5c5c]">Courses</span>
-                <strong className="text-[#141414] font-bold">{learningStats?.enrolledCount || 0}</strong>
-              </div>
-              <div className="flex justify-between items-center py-3 border-b border-[#f0f0f0] text-[14px]">
-                <span className="text-[#5c5c5c]">Certificates</span>
-                <strong className="text-[#141414] font-bold">{learningStats?.completedCount || 0}</strong>
-              </div>
-              <div className="flex justify-between items-center py-3 border-b border-[#f0f0f0] text-[14px]">
-                <span className="text-[#5c5c5c]">Completed</span>
-                <strong className="text-[#141414] font-bold">{learningStats?.completedCount || 0}</strong>
-              </div>
-              <div className="flex justify-between items-center pt-3 pb-1 text-[14px]">
-                <span className="text-[#5c5c5c]">Hours learned</span>
-                <strong className="text-[#141414] font-bold">
-                  {dashboardData?.totalLearningTime ? (dashboardData.totalLearningTime / 3600).toFixed(1) : "0"}h
-                </strong>
-              </div>
-            </div>
-            
+                <span>{copiedLink ? "Link Copied!" : "Copy Public Dossier Link"}</span>
+              </button>
+            )}
           </div>
         </aside>
 
-        <main className="flex-1 min-w-0 flex flex-col gap-6">
-          <header className="mb-2 flex justify-between items-center">
+        {/* Right Content Area */}
+        <main className="flex-1 min-w-0 space-y-6">
+          {/* Header Action Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
             <div>
-              <div className="text-[12px] font-bold text-[#5c5c5c] uppercase tracking-widest mb-1.5">USER PORTAL</div>
-              <h1 className="text-[24px] font-bold text-[#141414] m-0 leading-none">Profile</h1>
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                <span>User Portal</span>
+                <span>&bull;</span>
+                <span className="text-amber-600 dark:text-amber-400">Personal Dossier</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Member Profile
+              </h1>
             </div>
+
             <button
               onClick={() => setIsEditing(true)}
-              className="bg-[#ffffff] border border-[#d4d4d8] text-[#141414] text-[14px] font-bold px-5 py-2 rounded-full hover:-translate-y-1 hover:bg-[#e4e4e7] hover:border-[#141414] hover:shadow-[0_4px_12px_#0000001a] transition-all duration-300"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-950 font-bold text-sm shadow-sm transition-all self-start sm:self-auto"
             >
-              Edit profile
+              <Edit3 className="w-4 h-4" />
+              <span>Edit Profile</span>
             </button>
-          </header>
+          </div>
 
+          {/* Feedback Notice */}
           {(notice || error) && (
-            <div className={`mb-5 border border-[#b6dac2] rounded-md px-3.5 py-3 bg-[#f2fbf5] text-[#166534] font-bold w-full max-w-[520px] mx-auto ${error ? "is-error" : ""}`}>
-              {error || notice}
+            <div
+              className={`p-4 rounded-xl border flex items-center gap-3 text-sm font-semibold ${
+                error
+                  ? "bg-red-50 dark:bg-red-950/40 border-red-200 text-red-800 dark:text-red-300"
+                  : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 text-emerald-800 dark:text-emerald-300"
+              }`}
+            >
+              {error ? <AlertCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+              <span>{error || notice}</span>
             </div>
           )}
 
-          {/* EARNED CERTIFICATIONS */}
-          <article className="border border-[#d8d8d8] rounded-[10px] bg-white p-6 shadow-[0_1px_2px_#2a11080f] hover:-translate-y-1 hover:shadow-[0_8px_28px_-8px_#11111129] transition-all duration-300">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="m-0 text-[#141414] font-bold text-[16px]">Earned certifications</h2>
-              <button 
-                onClick={() => navigate('/course-completed')} 
-                className="text-[#5c5c5c] text-[12px] font-bold hover:text-[#141414] flex items-center gap-1 transition-colors"
+          {/* Earned Certifications Overview */}
+          <article className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-600" />
+                <span>Earned Certifications & SOP Masteries</span>
+              </h2>
+              <button
+                onClick={() => navigate("/course-completed")}
+                className="text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
               >
-                View all <span className="text-[12px]">→</span>
+                <span>View all credentials</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
-            <div className="flex flex-col">
-              {earnedCertifications.length > 0 ? earnedCertifications.map((item, index) => {
-                const isCompleted = item.statusText === "Completed";
-                const matchCert = certificates.find(c => c.title === item.title || c.title.includes(item.title) || item.title.includes(c.title));
-                
-                let dateStr = "-";
-                if (isCompleted) {
-                  const dateVal = matchCert?.issuedAt || matchCert?.createdAt;
-                  if (dateVal) {
-                    dateStr = new Date(dateVal).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-                  } else {
-                    dateStr = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-                  }
-                }
-                
-                let firstPart = item.title;
-                let secondPart = "";
-                const splitIndex = item.title.indexOf('·') !== -1 ? item.title.indexOf('·') : (item.title.indexOf('-') !== -1 ? item.title.indexOf('-') : -1);
-                if (splitIndex > 0) {
-                  firstPart = item.title.substring(0, splitIndex).trim();
-                  secondPart = " · " + item.title.substring(splitIndex + 1).trim();
-                }
 
-                return (
-                  <div key={item.id} className={`flex justify-between items-center py-4 ${index !== earnedCertifications.length - 1 ? "border-b border-[#f0f0f0]" : ""}`}>
-                    <div className="flex items-center text-[16px]">
-                      <span className="font-bold text-[#141414]">{firstPart}</span>
-                      <span className="text-[#5c5c5c]">{secondPart}</span>
-                      {!isCompleted && <span className="text-[#5c5c5c]">&nbsp;· in progress</span>}
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {earnedCertifications.length > 0 ? (
+                earnedCertifications.map((item: any) => {
+                  const isCompleted = item.statusText === "Completed";
+                  return (
+                    <div key={item.id} className="py-3.5 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                            isCompleted
+                              ? "bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                              : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                          }`}
+                        >
+                          <Award className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                            {item.title}
+                          </h4>
+                          <p className="text-xs text-slate-400">
+                            {item.category || "Operational Mastery"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            isCompleted
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                              : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                          }`}
+                        >
+                          {isCompleted ? "Accredited" : "In Progress"}
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-[14px] text-[#5c5c5c] whitespace-nowrap">{dateStr}</span>
-                  </div>
-                );
-              }) : (
-                <div className="text-[14px] text-[#5c5c5c]">No earned certifications yet.</div>
+                  );
+                })
+              ) : (
+                <div className="py-6 text-center text-xs text-slate-400">
+                  No earned certifications recorded yet.
+                </div>
               )}
             </div>
           </article>
 
-          {/* PERSONAL */}
-          <article className="border border-[#d8d8d8] rounded-[10px] bg-white p-6 shadow-[0_1px_2px_#2a11080f] hover:-translate-y-1 hover:shadow-[0_8px_28px_-8px_#11111129] transition-all duration-300">
-            <h2 className="m-0 mb-2 text-[#141414] font-bold text-[16px]">Personal</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">FIRST NAME</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{(!form.firstName || form.firstName === 'null') ? "—" : form.firstName}</span>
+          {/* Personal Information */}
+          <article className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <User className="w-4 h-4 text-amber-600" />
+              <span>Personal Identity & Demographics</span>
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  First Name
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {form.firstName || "—"}
+                </p>
               </div>
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">LAST NAME</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{(!form.lastName || form.lastName === 'null') ? "—" : form.lastName}</span>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Last Name
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {form.lastName || "—"}
+                </p>
               </div>
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">EMAIL</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{(!profile?.email || profile.email === 'null') ? "—" : profile.email}</span>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Email Address
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white break-all">
+                  {profile?.email || "—"}
+                </p>
               </div>
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">DATE OF BIRTH</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{formatDate(form.dob) || "—"}</span>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Date of Birth
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {formatDate(form.dob)}
+                </p>
               </div>
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">GENDER</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{(!form.gender || form.gender === 'null') ? "—" : toTitle(form.gender)}</span>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Gender
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {toTitle(form.gender) || "—"}
+                </p>
               </div>
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">CITY</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{(!form.city || form.city === 'null') ? "—" : form.city}</span>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Location
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {[form.city, form.countryName].filter(Boolean).join(", ") || "—"}
+                </p>
               </div>
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">COUNTRY</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{(!form.countryName || form.countryName === 'null') ? "—" : form.countryName}</span>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Phone Number
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {form.mobileNumber
+                    ? `${form.phoneCountryCode} ${form.mobileNumber}`
+                    : "Not provided"}
+                </p>
               </div>
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">PHONE</span>
-                <div className="flex items-center">
-                  <span className={`block break-words text-[16px] font-medium ${form.mobileNumber ? 'text-[#141414]' : 'text-[#8c8c8c]'}`}>
-                    {form.mobileNumber ? `${form.phoneCountryCode} ${form.mobileNumber}` : "Not provided"}
-                  </span>
-                  {profile?.profile?.phoneVerified && (
-                    <span className="ml-2 text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1 font-bold">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                      Verified
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">PREFERRED LANGUAGE</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{(!form.preferredLanguage || form.preferredLanguage === 'null') ? "—" : form.preferredLanguage}</span>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Preferred Language
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {form.preferredLanguage || "English"}
+                </p>
               </div>
             </div>
           </article>
 
-          {/* PROFESSIONAL */}
-          <article className="border border-[#d8d8d8] rounded-[10px] bg-white p-6 shadow-[0_1px_2px_#2a11080f] hover:-translate-y-1 hover:shadow-[0_8px_28px_-8px_#11111129] transition-all duration-300">
-            <h2 className="m-0 mb-2 text-[#141414] font-bold text-[16px]">Professional</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">CURRENT ROLE</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{(!form.currentRole || form.currentRole === 'null') ? "—" : form.currentRole}</span>
+          {/* Professional Information */}
+          <article className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-amber-600" />
+              <span>Professional Experience & Competencies</span>
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Current Role
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {form.currentRole || "—"}
+                </p>
               </div>
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">CURRENT EMPLOYER</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{(!form.currentEmployer || form.currentEmployer === 'null') ? "—" : form.currentEmployer}</span>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Current Employer
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {form.currentEmployer || "—"}
+                </p>
               </div>
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">EXPERIENCE LEVEL</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{(!form.experienceLevel || form.experienceLevel === 'null') ? "—" : toTitle(form.experienceLevel)}</span>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Experience Level
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {toTitle(form.experienceLevel) || "—"}
+                </p>
               </div>
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">INDUSTRY</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{(!form.industry || form.industry === 'null') ? "—" : form.industry}</span>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Industry Domain
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {form.industry || "—"}
+                </p>
               </div>
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">EDUCATION COMPLETION YEAR</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{(!form.educationCompletionYear || form.educationCompletionYear === 'null') ? "—" : form.educationCompletionYear}</span>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Graduation Year
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {form.educationCompletionYear || "—"}
+                </p>
               </div>
-              <div className="py-3.5 min-w-0 md:col-span-2">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">LEARNING INTERESTS</span>
-                {learningInterests.length > 0 ? (
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {learningInterests.map((interest) => (
-                      <span
-                        key={interest}
-                        className="inline-flex items-center px-3 py-1 bg-[#f4f4f4] border border-[#e5e5e5] text-[#333333] text-xs font-medium rounded-full"
-                      >
-                        {interest}
-                      </span>
-                    ))}
-                  </div>
+            </div>
+
+            {/* Learning Interests Chips */}
+            {learningInterests.length > 0 && (
+              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Training Interests
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {learningInterests.map((interest) => (
+                    <span
+                      key={interest}
+                      className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60"
+                    >
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </article>
+
+          {/* Certificate Credential Identity */}
+          <article className="bg-white dark:bg-slate-900 border border-amber-200/80 dark:border-amber-800/40 rounded-2xl p-6 shadow-sm bg-gradient-to-br from-white via-white to-amber-50/20 dark:from-slate-900 dark:to-amber-950/20">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-amber-600" />
+              <span>Accredited Diploma Name</span>
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Official Name Engraved on Diplomas
+                </span>
+                <p className="text-base font-black text-amber-900 dark:text-amber-300">
+                  {form.certificateName || fullName}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Title / Honorific
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {toTitle(form.titlePrefix) || "None"}
+                </p>
+              </div>
+            </div>
+          </article>
+
+          {/* Documents & Links Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Links */}
+            <article className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-amber-600" />
+                <span>Web & Portfolio Links</span>
+              </h2>
+
+              <div className="space-y-3">
+                {extraLinks.filter((l) => cleanUrl(l.url)).length > 0 ? (
+                  extraLinks
+                    .filter((l) => cleanUrl(l.url))
+                    .map((link, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-xs font-semibold">
+                        <span className="text-slate-400">{link.title || "Link"}:</span>
+                        <a
+                          href={link.url.startsWith("http") ? link.url : `https://${link.url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1 truncate max-w-[200px]"
+                        >
+                          <span>{link.url}</span>
+                          <ExternalLink className="w-3 h-3 shrink-0" />
+                        </a>
+                      </div>
+                    ))
                 ) : (
-                  <span className="block break-words text-[#141414] text-[16px] font-medium">—</span>
+                  <p className="text-xs text-slate-400">No external links registered.</p>
                 )}
               </div>
-            </div>
-          </article>
+            </article>
 
-          {/* CERTIFICATE */}
-          <article className="border border-[#d8d8d8] rounded-[10px] bg-white p-6 shadow-[0_1px_2px_#2a11080f] hover:-translate-y-1 hover:shadow-[0_8px_28px_-8px_#11111129] transition-all duration-300">
-            <h2 className="m-0 mb-2 text-[#141414] font-bold text-[16px]">Certificate</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-              <div className="py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">CERTIFICATE NAME</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{form.certificateName || "—"}</span>
-              </div>
-              <div className="py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">TITLE / PREFIX</span>
-                <span className="block break-words text-[#141414] text-[16px] font-medium">{toTitle(form.titlePrefix) || "Not set"}</span>
-              </div>
-            </div>
-          </article>
+            {/* Documents */}
+            <article className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-amber-600" />
+                <span>Verified Documents</span>
+              </h2>
 
-          {/* LINKS */}
-          <article className="border border-[#d8d8d8] rounded-[10px] bg-white p-6 shadow-[0_1px_2px_#2a11080f] hover:-translate-y-1 hover:shadow-[0_8px_28px_-8px_#11111129] transition-all duration-300">
-            <h2 className="m-0 mb-2 text-[#141414] font-bold text-[16px]">Links</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">PERSONAL SITE / BLOG LINKS</span>
-                <div className="block break-words text-[#141414] text-[16px] font-medium">
-                  {extraLinks.filter((link) => cleanUrl(link.url)).length > 0 ? (
-                    <div className="flex flex-col gap-1">
-                      {extraLinks
-                        .filter((link) => cleanUrl(link.url))
-                        .map((link, index) => (
-                          <a
-                            key={index}
-                            href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#141414] hover:underline font-normal break-all hover:text-[#c99b2e]"
-                          >
-                            {link.url}
-                          </a>
-                        ))}
-                    </div>
-                  ) : (
-                    <span className="text-[#5c5c5c]">Not provided</span>
-                  )}
-                </div>
-              </div>
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">PORTFOLIO URL</span>
-                <div className="block break-words text-[#141414] text-[16px] font-medium">
-                  {form.portfolioUrl ? (
-                    <a
-                      href={form.portfolioUrl.startsWith('http') ? form.portfolioUrl : `https://${form.portfolioUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#141414] hover:underline font-normal break-all hover:text-[#c99b2e]"
-                    >
-                      {form.portfolioUrl}
-                    </a>
-                  ) : (
-                    <span className="text-[#5c5c5c]">Not provided</span>
-                  )}
-                </div>
-              </div>
-              <div className="py-3.5 min-w-0">
-                <span className="block text-[#8c8c8c] text-[10px] font-bold uppercase tracking-wider mb-1.5">WEBSITE URL</span>
-                <div className="block break-words text-[#141414] text-[14px] font-medium">
-                  {form.websiteUrl ? (
-                    <a
-                      href={form.websiteUrl.startsWith('http') ? form.websiteUrl : `https://${form.websiteUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#141414] hover:underline font-normal break-all hover:text-[#c99b2e]"
-                    >
-                      {form.websiteUrl}
-                    </a>
-                  ) : (
-                    <span className="text-[#5c5c5c]">Not provided</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </article>
-
-          {/* DOCUMENTS */}
-          <article className="border border-[#d8d8d8] rounded-[10px] bg-white p-6 shadow-[0_1px_2px_#2a11080f] hover:-translate-y-1 hover:shadow-[0_8px_28px_-8px_#11111129] transition-all duration-300">
-            <h2 className="m-0 mb-2 text-[#141414] font-bold text-[16px]">Documents</h2>
-            <div className="flex flex-col">
-              <div className="border-b border-[#f0f0f0] py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">CV / RESUME</span>
-                <div className="block break-words text-[#141414] text-[16px] font-medium">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider">CV / Resume:</span>
                   {form.resumeUrl ? (
                     <a
                       href={form.resumeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#141414] hover:text-[#c99b2e] transition-colors"
+                      className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1"
                     >
-                      {extractFilename(form.resumeUrl)}
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{extractFilename(form.resumeUrl)}</span>
                     </a>
                   ) : (
-                    <span className="text-[#5c5c5c]">Not uploaded</span>
+                    <span className="text-slate-400">Not uploaded</span>
                   )}
                 </div>
-              </div>
-              <div className="py-3.5 min-w-0">
-                <span className="block text-[#5c5c5c] text-[12px] font-bold uppercase tracking-wider mb-1.5">EXTERNALLY EARNED CERTIFICATES + PORTFOLIO</span>
-                <div className="block break-words text-[#141414] text-[14px] font-medium">
-                  {certificates.length > 0 ? (
-                    <div className="flex flex-col gap-1">
-                      {certificates.map((cert, index) => (
-                        <a
-                          key={cert.id}
-                          href={cert.url || "#"}
-                          target={cert.url ? "_blank" : undefined}
-                          rel="noopener noreferrer"
-                          className="text-[#141414] hover:text-[#c99b2e] transition-colors break-all"
-                        >
-                          {cert.title || `Certificate ${index + 1}`}
-                        </a>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-[#8c8c8c]">Not uploaded</span>
-                  )}
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider">Certificates:</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    {certificates.length} document{certificates.length !== 1 ? "s" : ""} on record
+                  </span>
                 </div>
               </div>
-            </div>
-          </article>
+            </article>
+          </div>
         </main>
       </div>
     );
   }
 
+  // ==================== EDIT MODE ====================
   return (
-    <>
-      <div className="w-full max-w-full mx-auto min-h-full  py-10 flex flex-col md:flex-row gap-8 bg-white text-[#141414] items-start">
-        <aside className="w-full md:w-[280px] shrink-0 flex flex-col">
-          <div className="flex flex-col bg-white rounded-xl border border-[#e5e5e5] shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 px-6 pt-8 pb-6">
-            
-            <div className="flex flex-col items-center text-center">
-              <div className="h-[104px] w-[104px] rounded-full bg-gray-100 flex items-center justify-center mb-4 overflow-hidden relative border border-[#e5e5e5]">
-                {profile?.profile?.photoUrl ? (
-                  <img src={profile?.profile?.photoUrl} alt={fullName} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-gray-400 text-xs font-semibold">Photo</span>
-                )}
-              </div>
-              <h2 className="font-bold text-[20px] text-[#141414] mb-1">{fullName}</h2>
-              <div className="text-[13px] font-medium text-[#8c8c8c] mb-6">
-                Editing your profile
-              </div>
-              
-              <div className="relative flex items-center justify-center mb-5">
-                <svg className="w-[88px] h-[88px] transform -rotate-90">
-                  <circle cx="44" cy="44" r="36" stroke="#f5f5f5" strokeWidth="8" fill="none" />
-                  <circle
-                    cx="44" cy="44" r="36"
-                    stroke="#c99b2e"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 36}`}
-                    strokeDashoffset={`${2 * Math.PI * 36 * (1 - completed / 100)}`}
-                    strokeLinecap="round"
-                    className="transition-all duration-1000 ease-in-out"
-                  />
-                </svg>
-                <span className="absolute text-[16px] font-bold text-[#755a12]">{completed}%</span>
-              </div>
-              
-              <p className="text-[12px] text-[#5c5c5c] mb-6 px-1 leading-relaxed text-center max-w-[220px] mx-auto">
-                Finish every field to reach 100% and unlock your Course Completed proof.
-              </p>
+    <div className="w-full max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-8 items-start min-h-screen text-slate-900 dark:text-slate-100">
+      {/* Left Sidebar */}
+      <aside className="w-full lg:w-[320px] shrink-0 space-y-6 lg:sticky lg:top-24">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 flex flex-col items-center text-center">
+          <div className="w-20 h-20 rounded-2xl bg-amber-100 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 overflow-hidden mb-3 flex items-center justify-center">
+            {photoPreview ? (
+              <img src={photoPreview} alt={fullName} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xl font-bold text-amber-700">{fullName.charAt(0)}</span>
+            )}
+          </div>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+            {fullName}
+          </h2>
+          <span className="text-xs text-amber-700 dark:text-amber-400 font-semibold mt-0.5">
+            Editing Profile Mode
+          </span>
 
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="w-full bg-[#fef5ad] hover:bg-[#f1e699] border border-[#e5d26e] text-[#141414] rounded-full py-2.5 font-bold transition-all text-[14px] shadow-sm disabled:opacity-50"
-              >
-                {saving ? "Saving..." : "Save changes"}
-              </button>
+          {/* Completeness Ring */}
+          <div className="mt-4 flex items-center gap-3 w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-100 dark:border-slate-800">
+            <span className="text-2xl font-black text-amber-600">{completed}%</span>
+            <div className="text-left text-[11px] text-slate-500 leading-tight">
+              <span>Goal: 100% completion unlocks verifiable diplomas</span>
             </div>
+          </div>
 
-            <nav className="flex flex-col w-full text-left mt-6 border-t border-[#e5e5e5]">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <div 
-                    key={tab.id} 
-                    onClick={() => handleTabClick(tab.id)} 
-                    className="flex justify-between items-center py-3.5 border-b border-[#e5e5e5] text-[13px] cursor-pointer transition-colors hover:bg-[#fafafa]"
-                  >
-                    <span className={isActive ? 'text-[#141414]' : 'text-[#8c8c8c]'}>{tab.label}</span>
-                    <span className={`font-bold ${isActive ? 'text-[#a17a22]' : 'text-[#141414]'}`}>{getTabProgress(tab.id)}</span>
-                  </div>
-                );
-              })}
-            </nav>
-            
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full mt-4 py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            <span>Save Changes</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsEditing(false)}
+            className="w-full mt-2 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+          >
+            Cancel editing
+          </button>
+        </div>
+
+        {/* Section Jump Tabs */}
+        <nav className="space-y-1.5">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const progress = getTabProgress(tab.id);
+            const IconComp = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleTabClick(tab.id)}
+                className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-all ${
+                  isActive
+                    ? "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700 font-bold text-amber-950 dark:text-amber-200 shadow-2xs"
+                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 text-xs font-bold">
+                  <IconComp className="w-4 h-4 text-amber-600" />
+                  <span>{tab.label}</span>
+                </div>
+                <span className="text-[11px] font-semibold text-slate-400">{progress}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* Main Content: Edit Form */}
+      <main className="flex-1 min-w-0 space-y-8">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Profile & Account Setup
+            </span>
+            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+              Edit Profile Dossier
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setIsEditing(false)}
-              className="w-full mt-6 bg-white text-[#8c8c8c] hover:text-[#141414] text-[13px] font-bold transition-colors"
+              className="px-4 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
-              Cancel editing
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="px-5 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm transition-all disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              <span>Save Profile</span>
             </button>
           </div>
-        </aside>
+        </div>
 
-        <main className="flex-1 min-w-0 flex flex-col">
-          <header className="mb-6">
-            <div className="text-[10px] font-bold text-[#8c8c8c] uppercase tracking-widest mb-2">PROFILE & ACCOUNT</div>
-            <h1 className="text-[24px] font-bold text-[#141414] m-0 mb-2">Edit profile</h1>
-            <p className="text-[14px] text-[#5c5c5c]">Complete every field to reach 100%. Full completion is required before your Course Completed proof can be issued.</p>
-          </header>
+        {/* Notices */}
+        {(notice || error) && (
+          <div
+            className={`p-4 rounded-xl border flex items-center gap-3 text-sm font-semibold ${
+              error
+                ? "bg-red-50 dark:bg-red-950/40 border-red-200 text-red-800 dark:text-red-300"
+                : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 text-emerald-800 dark:text-emerald-300"
+            }`}
+          >
+            {error ? <AlertCircle className="w-5 h-5 shrink-0" /> : <CheckCircle2 className="w-5 h-5 shrink-0" />}
+            <span>{error || notice}</span>
+          </div>
+        )}
 
-          <div className="flex flex-wrap gap-2 mb-8">
-            <div className="inline-flex items-center p-1 bg-[#fafafa] border border-[#e5e5e5] rounded-full">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => handleTabClick(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[13px] transition-colors ${
-                      isActive
-                        ? 'bg-[#141414] text-white font-bold'
-                        : 'text-[#5c5c5c] hover:text-[#141414] font-medium'
-                    }`}
-                  >
-                    {tab.label}
-                    <span className={`text-[11px] ${
-                      isActive ? 'px-2 py-0.5 rounded-full bg-[#3f3822] text-white font-bold' : 'text-[#5c5c5c] font-medium'
-                    }`}>
-                      {getTabProgress(tab.id)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+        {/* SECTION 1: PERSONAL */}
+        <section
+          id="section-personal"
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-24"
+        >
+          <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <User className="w-4 h-4 text-amber-600" />
+              <span>Personal Details & Demographics</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">Core identity fields used for authentication and official accreditation.</p>
           </div>
 
-          {(notice || error) && (
-            <div className={`mb-6 border border-[#b6dac2] rounded-md px-4 py-3 bg-[#f2fbf5] text-[#166534] font-bold text-[14px] ${error ? "is-error" : ""}`}>
-              {error || notice}
-            </div>
-          )}
-
-          <div className="profile-edit-content animate-fade">
-            <div id="section-personal" className="bg-white rounded-xl border border-[#e5e5e5] mb-8 scroll-mt-24">
-              <div className="px-6 py-5 border-b border-[#e5e5e5]">
-                <h2 className="text-[16px] font-bold text-[#141414] m-0">Personal details</h2>
+          {/* Photo Dropzone */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">
+              Profile Photo
+            </label>
+            <div className="flex flex-col sm:flex-row items-center gap-5 p-4 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50/50 dark:bg-slate-850">
+              <div className="w-18 h-18 rounded-2xl bg-amber-100 dark:bg-amber-950/60 overflow-hidden flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 shadow-2xs relative">
+                {photoPreview ? (
+                  <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-8 h-8 text-amber-600" />
+                )}
+                {photoUploading && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  </div>
+                )}
               </div>
-              <div className="p-6">
-                <h3 className="text-[11px] font-bold text-[#5c5c5c] uppercase tracking-widest mb-6">CORE IDENTITY + DEMOGRAPHIC</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-6">
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">First Name <span className="text-[#d92d20]">*</span></label>
-                    <input className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all disabled:bg-[#fafafa] disabled:text-[#8c8c8c]" value={form.firstName} onChange={updateField("firstName")} />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Last Name <span className="text-[#d92d20]">*</span></label>
-                    <input className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all disabled:bg-[#fafafa] disabled:text-[#8c8c8c]" value={form.lastName} onChange={updateField("lastName")} />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2 flex items-center">
-                      Email <span className="text-[#d92d20] ml-1">*</span> 
-                      <span className="text-[#8c8c8c] font-normal ml-1.5">(OTP required to change)</span>
-                    </label>
-                    <input className="w-full h-11 border border-[#e5e5e5] rounded-md bg-[#fafafa] px-3.5 text-[#8c8c8c] text-[14px] outline-none cursor-not-allowed" value={profile?.email ?? ""} readOnly />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Title / Prefix</label>
-                    <select className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" value={form.titlePrefix} onChange={updateField("titlePrefix")}>
-                      <option value="">Select...</option>
-                      <option value="MR">Mr.</option>
-                      <option value="MRS">Mrs.</option>
-                      <option value="MS">Ms.</option>
-                      <option value="DR">Dr.</option>
-                      <option value="PROF">Prof.</option>
-                      <option value="NONE">None</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Name on your Course Completed proof <span className="text-[#d92d20]">*</span></label>
-                    <input className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" value={form.certificateName} onChange={updateField("certificateName")} />
-                    <p className="mt-2 text-[12px] text-[#8a6a1c] font-medium leading-tight pr-4">Controls the name shown on your Course Completed proof(s). Changes apply only to future Course Completed proofs. OTP required.</p>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Photo</label>
-                    <div className="w-full min-h-[88px] flex items-center justify-center border border-dashed border-[#d8d8d8] rounded-md bg-[#fafafa] text-[#8c8c8c] p-4 text-center text-[12px] font-medium cursor-pointer hover:bg-[#f5f5f5] transition-colors relative">
-                      {photoUploading ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                      ) : photoPreview ? (
-                        <div className="flex items-center gap-4 w-full justify-center">
-                          <img src={photoPreview} alt="Preview" className="h-12 w-12 rounded-full object-cover border border-[#e5e5e5]" />
-                          <div className="flex flex-col text-left">
-                            <span className="text-[#141414] font-bold text-[13px]">Photo uploaded</span>
-                            <button type="button" onClick={(e) => { e.preventDefault(); handleDeletePhoto(); }} className="text-[#d92d20] text-[12px] font-bold hover:underline mt-0.5 text-left">Remove photo</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <label className="w-full h-full flex items-center justify-center cursor-pointer">
-                          <span>Drag image or click to upload · square JPG/PNG up to 2 MB · preview shown before save</span>
-                          <input type="file" accept="image/*" hidden onChange={handlePhotoUpload} />
-                        </label>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Preferred Language</label>
-                    <select className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" value={form.preferredLanguage} onChange={updateField("preferredLanguage")}>
-                      <option value="">English</option>
-                      {new LanguageList().getData().map((lang: { code: string; language: string }) => (
-                        <option key={lang.code} value={lang.code}>{lang.language}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2 flex items-center">
-                      Date of birth <span className="text-[#8c8c8c] font-normal ml-1.5">(used for age verification · min 16)</span>
-                    </label>
-                    <input type="date" className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" value={form.dob} max={maxDobDate} onChange={updateField("dob")} />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Gender</label>
-                    <select className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" value={form.gender} onChange={updateField("gender")}>
-                      <option value="">Not provided</option>
-                      <option value="MALE">Male</option>
-                      <option value="FEMALE">Female</option>
-                      <option value="OTHER">Other</option>
-                      <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Country <span className="text-[#d92d20]">*</span></label>
-                    <select className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" value={form.countryName} onChange={(e) => {
-                      const countryName = e.target.value;
-                      setForm((current) => ({
-                        ...current,
-                        countryName,
-                        phoneCountryCode: getCountryCallingCode(countryName),
-                      }));
-                    }}>
-                      <option value="">Select country</option>
-                      {countries.map((country) => (
-                        <option key={country.isoCode} value={country.name}>{country.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">City</label>
-                    <input className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" value={form.city} onChange={updateField("city")} />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Phone</label>
-                    <div className="flex gap-2">
-                      <input className="w-[80px] h-11 border border-[#e5e5e5] rounded-md bg-[#fafafa] px-3.5 text-[#8c8c8c] text-[14px] outline-none cursor-not-allowed" value={form.phoneCountryCode} readOnly />
-                      <input type="tel" className="flex-1 h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" value={form.mobileNumber} onChange={(e) => {
-                        let mobileNumber = e.target.value.replace(/\D/g, "");
-                        const selectedCountry = countries.find((c) => c.name.toLowerCase() === form.countryName.trim().toLowerCase());
-                        const isoCode = selectedCountry?.isoCode as any;
-                        if (isoCode) {
-                          let validPrefix = "";
-                          for (let i = 1; i <= mobileNumber.length; i++) {
-                            if (parsePhoneNumberFromString(mobileNumber.substring(0, i), isoCode)?.isValid()) {
-                              validPrefix = mobileNumber.substring(0, i);
-                              break;
-                            }
-                          }
-                          if (validPrefix && mobileNumber.length > validPrefix.length) {
-                            mobileNumber = validPrefix;
-                          }
-                        } else if (mobileNumber.length > 15) {
-                          mobileNumber = mobileNumber.substring(0, 15);
-                        }
-                        setForm((current) => ({ ...current, mobileNumber }));
-                      }} placeholder="Mobile number" inputMode="numeric" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <div className="profile-edit-content animate-fade">
-            <div id="section-professional" className="bg-white rounded-xl border border-[#e5e5e5] mb-8 scroll-mt-24">
-              <div className="px-6 py-5 border-b border-[#e5e5e5]">
-                <h2 className="text-[16px] font-bold text-[#141414] m-0">Professional details</h2>
-              </div>
-              <div className="p-6">
-                <h3 className="text-[11px] font-bold text-[#5c5c5c] uppercase tracking-widest mb-6">PROFESSIONAL · PROFESSIONAL PROFILE</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-6">
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Current Role</label>
-                    <input type="text" value={form.currentRole} onChange={updateField("currentRole")} placeholder="e.g. Information Architect" className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Experience Level</label>
-                    <select value={form.experienceLevel} onChange={updateField("experienceLevel")} className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all">
-                      <option value="">Select experience</option>
-                      <option value="BEGINNER">BEGINNER (0-2 yrs)</option>
-                      <option value="INTERMEDIATE">INTERMEDIATE</option>
-                      <option value="ADVANCED">ADVANCED</option>
-                      <option value="EXPERT">EXPERT</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Industry</label>
-                    <select value={form.industry} onChange={updateField("industry")} className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all">
-                      <option value="">Select industry</option>
-                      <option>Government</option>
-                      <option>Technology</option>
-                      <option>Finance</option>
-                      <option>Healthcare</option>
-                      <option>Education</option>
-                      <option>Manufacturing</option>
-                      <option>Retail</option>
-                      <option>Construction</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Current Employer</label>
-                    <input type="text" value={form.currentEmployer} onChange={updateField("currentEmployer")} placeholder="Company name" className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Education Completion Year</label>
-                    <input type="number" min="1950" max={new Date().getFullYear() + 10} value={form.educationCompletionYear} onChange={updateField("educationCompletionYear")} placeholder="e.g. 2024" className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" />
-                  </div>
-                </div>
-
-                <div className="mt-8 pt-8 border-t border-[#e5e5e5]">
-                  <CareerHistorySection value={careerHistory} onChange={setCareerHistory} currentEmployer={form.currentEmployer} />
-                </div>
-
-                <div className="mt-8 pt-8 border-t border-[#e5e5e5]">
-                  <label className="block text-[12px] font-bold text-[#141414] mb-2">Preferred Skills</label>
-                  <div className="relative max-w-md">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={skillQuery}
-                        onChange={(event) => {
-                          setSkillQuery(event.target.value);
-                          setSkillsOpen(true);
-                        }}
-                        onFocus={() => setSkillsOpen(true)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            addSkill(skillQuery);
-                          }
-                          if (event.key === "Escape") setSkillsOpen(false);
-                        }}
-                        placeholder={skillsLoading ? "Loading skills..." : "Type to search or add a skill"}
-                        className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all"
-                      />
-                      <button type="button" onClick={() => addSkill(skillQuery)} disabled={!skillQuery.trim()} className="shrink-0 px-3 rounded-md border border-[#c99b2e] text-[13px] font-semibold disabled:opacity-40">Add</button>
-                    </div>
-                    {skillsOpen && (filteredSkills.length > 0 || skillQuery.trim()) && (
-                      <div className="absolute z-20 mt-1 w-full max-h-56 overflow-auto rounded-md border border-[#e5e5e5] bg-white p-1 shadow-lg">
-                        {filteredSkills.map((skill) => (
-                          <button type="button" key={skill.id} onClick={() => addSkill(skill.name)} className="block w-full rounded px-3 py-2 text-left text-[14px] hover:bg-[#fff8d7]">{skill.name}</button>
-                        ))}
-                        {skillQuery.trim() && !skills.some((skill) => skill.name.toLowerCase() === skillQuery.trim().toLowerCase()) && (
-                          <button type="button" onClick={() => addSkill(skillQuery)} className="block w-full rounded border-t border-[#f0f0f0] px-3 py-2 text-left text-[14px] font-semibold hover:bg-[#fff8d7]">Add new skill: {skillQuery.trim()}</button>
-                        )}
-                      </div>
-                    )}
-                    {selectedSkills.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        {selectedSkills.map((skill) => (
-                          <span key={skill} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#f5f5f5] text-[#141414] text-[13px] font-medium rounded-full border border-[#e5e5e5]">
-                            {skill}
-                            <button type="button" onClick={() => setSelectedSkills((current) => current.filter((item) => item !== skill))} aria-label={`Remove ${skill}`} className="text-[#8c8c8c] hover:text-[#d92d20]"><X size={14} /></button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <p className="mt-2 text-[12px] text-gray-500">Existing skills come from the database. New skills are created when you save.</p>
-                  </div>
-                </div>
-
-                <div className="mt-8 pt-8 border-t border-[#e5e5e5]">
-                  <label className="block text-[12px] font-bold text-[#141414] mb-2">Learning interests</label>
-                  <input
-                    type="text"
-                    value={learningInterestInput}
-                    onChange={(e) => setLearningInterestInput(e.target.value)}
-                    onKeyDown={handleAddLearningInterest}
-                    placeholder="Type and press Enter to add"
-                    className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all"
-                  />
-
-                  {learningInterests.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {learningInterests.map((interest) => (
-                        <span
-                          key={interest}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#f4f4f4] text-[#333333] text-[13px] font-medium rounded-full border border-[#e5e5e5]"
-                        >
-                          {interest}
-                          <button
-                            type="button"
-                            onClick={() => removeLearningInterest(interest)}
-                            className="text-[#8c8c8c] hover:text-[#d92d20] flex items-center justify-center bg-transparent border-0 cursor-pointer"
-                            aria-label={`Remove ${interest}`}
-                          >
-                            <X size={14} />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
+              <div className="space-y-1.5 text-center sm:text-left">
+                <div className="flex items-center gap-3 justify-center sm:justify-start">
+                  <label className="cursor-pointer px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>{photoPreview ? "Change Photo" : "Upload Photo"}</span>
+                    <input type="file" accept="image/*" hidden onChange={handlePhotoUpload} />
+                  </label>
+                  {photoPreview && (
+                    <button
+                      type="button"
+                      onClick={handleDeletePhoto}
+                      className="text-xs font-bold text-rose-600 hover:underline"
+                    >
+                      Remove
+                    </button>
                   )}
                 </div>
+                <p className="text-[11px] text-slate-400">Square JPG or PNG up to 2 MB.</p>
               </div>
             </div>
           </div>
 
-          <div className="profile-edit-content animate-fade">
-            <div id="section-links" className="bg-white rounded-xl border border-[#e5e5e5] mb-8 scroll-mt-24">
-              <div className="px-6 py-5 border-b border-[#e5e5e5]">
-                <h2 className="text-[16px] font-bold text-[#141414] m-0">Personal links</h2>
-              </div>
-              <div className="p-6">
-                <h3 className="text-[11px] font-bold text-[#5c5c5c] uppercase tracking-widest mb-6">PERSONAL LINKS · MULTIPLE LINKS ALLOWED</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                First Name <span className="text-rose-500">*</span>
+              </label>
+              <input
+                className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
+                value={form.firstName}
+                onChange={updateField("firstName")}
+              />
+            </div>
 
-                <div className="mb-8 pb-8 border-b border-[#e5e5e5]">
-                  <label className="block text-[12px] font-bold text-[#141414] mb-4 flex items-center">
-                    Personal Site / Blog Links <span className="text-[#8c8c8c] font-normal ml-1.5">(optional)</span>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Last Name <span className="text-rose-500">*</span>
+              </label>
+              <input
+                className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-medium"
+                value={form.lastName}
+                onChange={updateField("lastName")}
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                Primary Email <span className="text-rose-500">*</span>
+              </label>
+              <span className="text-[11px] text-slate-400 flex items-center gap-1 font-medium">
+                <Lock className="w-3 h-3" /> OTP verification required to change
+              </span>
+            </div>
+            <input
+              className="w-full px-4 py-2.5 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl text-slate-500 cursor-not-allowed font-medium"
+              value={profile?.email ?? ""}
+              readOnly
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="sm:col-span-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Title / Prefix
+              </label>
+              <select
+                className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium cursor-pointer"
+                value={form.titlePrefix}
+                onChange={updateField("titlePrefix")}
+              >
+                <option value="">None</option>
+                <option value="MR">Mr.</option>
+                <option value="MRS">Mrs.</option>
+                <option value="MS">Ms.</option>
+                <option value="DR">Dr.</option>
+                <option value="PROF">Prof.</option>
+              </select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Name on Diplomas & Certificates <span className="text-rose-500">*</span>
+              </label>
+              <input
+                className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 font-semibold"
+                value={form.certificateName}
+                onChange={updateField("certificateName")}
+              />
+              <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-400 font-medium">
+                Exact name engraved on official accredited certificates.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Preferred Language
+              </label>
+              <select
+                className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium cursor-pointer"
+                value={form.preferredLanguage}
+                onChange={updateField("preferredLanguage")}
+              >
+                <option value="English">English</option>
+                {new LanguageList().getData().map((lang: { code: string; language: string }) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.language}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Date of Birth
+              </label>
+              <input
+                type="date"
+                max={maxDobDate}
+                className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium"
+                value={form.dob}
+                onChange={updateField("dob")}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Gender
+              </label>
+              <select
+                className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium cursor-pointer"
+                value={form.gender}
+                onChange={updateField("gender")}
+              >
+                <option value="">Select gender...</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+                <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Country <span className="text-rose-500">*</span>
+              </label>
+              <select
+                className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium cursor-pointer"
+                value={form.countryName}
+                onChange={(e) => {
+                  const countryName = e.target.value;
+                  setForm((current) => ({
+                    ...current,
+                    countryName,
+                    phoneCountryCode: getCountryCallingCode(countryName),
+                  }));
+                }}
+              >
+                <option value="">Select country</option>
+                {countries.map((country) => (
+                  <option key={country.isoCode} value={country.name}>
+                    {country.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                City
+              </label>
+              <input
+                className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium"
+                value={form.city}
+                onChange={updateField("city")}
+                placeholder="e.g. Muscat or Dubai"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Phone Number
+              </label>
+              <div className="flex border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-amber-500/20">
+                <span className="w-18 bg-slate-100 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 px-3 py-2.5 text-xs font-mono font-bold text-slate-600 dark:text-slate-300 flex items-center justify-center select-none">
+                  {form.phoneCountryCode || "+91"}
+                </span>
+                <input
+                  type="tel"
+                  className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border-none focus:outline-none font-medium"
+                  value={form.mobileNumber}
+                  onChange={(e) => {
+                    let mobileNumber = e.target.value.replace(/\D/g, "");
+                    setForm((current) => ({ ...current, mobileNumber }));
+                  }}
+                  placeholder="Digits"
+                  inputMode="numeric"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 2: PROFESSIONAL */}
+        <section
+          id="section-professional"
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-24"
+        >
+          <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-amber-600" />
+              <span>Professional Profile & Work Experience</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">Career trajectory and operational domain expertise.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Current Role
+              </label>
+              <input
+                type="text"
+                value={form.currentRole}
+                onChange={updateField("currentRole")}
+                placeholder="e.g. Facilities Operations Lead"
+                className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Experience Level
+              </label>
+              <select
+                value={form.experienceLevel}
+                onChange={updateField("experienceLevel")}
+                className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium cursor-pointer"
+              >
+                <option value="">Select experience level...</option>
+                <option value="BEGINNER">Junior / Entry Level (0-2 yrs)</option>
+                <option value="INTERMEDIATE">Mid-Level Specialist (3-5 yrs)</option>
+                <option value="ADVANCED">Senior Professional (6-10 yrs)</option>
+                <option value="EXPERT">Executive / Director (10+ yrs)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Industry Domain
+              </label>
+              <select
+                value={form.industry}
+                onChange={updateField("industry")}
+                className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium cursor-pointer"
+              >
+                <option value="">Select industry...</option>
+                <option>Facilities & Environmental Services</option>
+                <option>Healthcare & Sanitation</option>
+                <option>Commercial Real Estate</option>
+                <option>Technology & Data Centers</option>
+                <option>Hospitality & Tourism</option>
+                <option>Education & Institutional</option>
+                <option>Government & Public Sector</option>
+                <option>Manufacturing & Logistics</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Current Employer
+              </label>
+              <input
+                type="text"
+                value={form.currentEmployer}
+                onChange={updateField("currentEmployer")}
+                placeholder="Organization or Company Name"
+                className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+              Graduation Completion Year
+            </label>
+            <input
+              type="number"
+              min="1950"
+              max={new Date().getFullYear() + 10}
+              value={form.educationCompletionYear}
+              onChange={updateField("educationCompletionYear")}
+              placeholder="e.g. 2023"
+              className="w-full max-w-xs px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium"
+            />
+          </div>
+
+          {/* Career History Section */}
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+            <CareerHistorySection
+              value={careerHistory}
+              onChange={setCareerHistory}
+              currentEmployer={form.currentEmployer}
+            />
+          </div>
+
+          {/* Preferred Skills */}
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+              Preferred Skills & Competencies
+            </label>
+            <div className="relative max-w-lg">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={skillQuery}
+                  onChange={(e) => {
+                    setSkillQuery(e.target.value);
+                    setSkillsOpen(true);
+                  }}
+                  onFocus={() => setSkillsOpen(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addSkill(skillQuery);
+                    }
+                    if (e.key === "Escape") setSkillsOpen(false);
+                  }}
+                  placeholder={skillsLoading ? "Loading skills..." : "Type to search skills..."}
+                  className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => addSkill(skillQuery)}
+                  disabled={!skillQuery.trim()}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs disabled:opacity-40 transition-all shadow-2xs"
+                >
+                  Add
+                </button>
+              </div>
+
+              {skillsOpen && (filteredSkills.length > 0 || skillQuery.trim()) && (
+                <div className="absolute z-20 mt-1.5 w-full max-h-56 overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-1.5 shadow-xl">
+                  {filteredSkills.map((skill) => (
+                    <button
+                      type="button"
+                      key={skill.id}
+                      onClick={() => addSkill(skill.name)}
+                      className="block w-full rounded-lg px-3 py-2 text-left text-xs font-semibold hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors"
+                    >
+                      {skill.name}
+                    </button>
+                  ))}
+                  {skillQuery.trim() &&
+                    !skills.some((s) => s.name.toLowerCase() === skillQuery.trim().toLowerCase()) && (
+                      <button
+                        type="button"
+                        onClick={() => addSkill(skillQuery)}
+                        className="block w-full rounded-lg border-t border-slate-100 dark:border-slate-800 px-3 py-2 text-left text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-50"
+                      >
+                        + Create &ldquo;{skillQuery.trim()}&rdquo;
+                      </button>
+                    )}
+                </div>
+              )}
+
+              {selectedSkills.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {selectedSkills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
+                    >
+                      {skill}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSkills((cur) => cur.filter((i) => i !== skill))}
+                        className="text-slate-400 hover:text-rose-500"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Learning Interests */}
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+              Learning Interests
+            </label>
+            <input
+              type="text"
+              value={learningInterestInput}
+              onChange={(e) => setLearningInterestInput(e.target.value)}
+              onKeyDown={handleAddLearningInterest}
+              placeholder="Type topic and press Enter..."
+              className="w-full max-w-lg px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium"
+            />
+            {learningInterests.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {learningInterests.map((interest) => (
+                  <span
+                    key={interest}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 text-xs font-semibold rounded-full"
+                  >
+                    <span>{interest}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeLearningInterest(interest)}
+                      className="text-amber-600 hover:text-rose-600"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* SECTION 3: PERSONAL LINKS */}
+        <section
+          id="section-links"
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-24"
+        >
+          <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <Link2 className="w-4 h-4 text-amber-600" />
+              <span>Personal & Digital Links</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">Showcase your verified external portfolios, GitHub, or LinkedIn.</p>
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+              Personal Site & Social Handles
+            </label>
+            {extraLinks.map((link, idx) => (
+              <div key={idx} className="flex flex-col sm:flex-row gap-2.5 items-center">
+                <input
+                  type="text"
+                  value={link.title}
+                  placeholder="Title (e.g. LinkedIn, Portfolio)"
+                  onChange={(e) => handleLinkChange(idx, "title", e.target.value)}
+                  className="w-full sm:w-1/3 px-3.5 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium"
+                />
+                <input
+                  type="url"
+                  value={link.url}
+                  placeholder="https://..."
+                  onChange={(e) => handleLinkChange(idx, "url", e.target.value)}
+                  className="w-full sm:flex-1 px-3.5 py-2 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium"
+                />
+                {extraLinks.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveLink(idx)}
+                    className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={handleAddLink}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-lg transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add another link</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Portfolio URL
+              </label>
+              <input
+                type="url"
+                value={form.portfolioUrl}
+                onChange={updateField("portfolioUrl")}
+                placeholder="https://"
+                className="w-full px-4 py-2.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Website URL
+              </label>
+              <input
+                type="url"
+                value={form.websiteUrl}
+                onChange={updateField("websiteUrl")}
+                placeholder="https://"
+                className="w-full px-4 py-2.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 4: DOCUMENTS */}
+        <section
+          id="section-documents"
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-24"
+        >
+          <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
+            <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <FileText className="w-4 h-4 text-amber-600" />
+              <span>Supporting Documents & Credentials</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">Upload official CV and external certifications.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* CV / Resume */}
+            <div className="space-y-3">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                CV / Professional Resume
+              </label>
+              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-5 text-center bg-slate-50/50 dark:bg-slate-850 relative">
+                {resumeUploading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-amber-600 mx-auto" />
+                ) : (
+                  <label className="cursor-pointer block">
+                    <Upload className="w-6 h-6 text-slate-400 mx-auto mb-1.5" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                      {form.resumeUrl ? "Replace Resume" : "Upload Resume (PDF/DOC)"}
+                    </span>
+                    <span className="text-[10px] text-slate-400">Up to 5 MB</span>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      hidden
+                      onChange={handleResumeUpload}
+                    />
                   </label>
-                  <div className="flex flex-col gap-3">
-                    {extraLinks.map((link, index) => (
-                      <div key={`${index}-${link.url}`} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                        <input className="w-full sm:w-1/3 h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" value={link.title} placeholder="e.g. Portfolio" onChange={(e) => handleLinkChange(index, "title", e.target.value)} />
-                        <input className="flex-1 w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" value={link.url} placeholder="https://" onChange={(e) => handleLinkChange(index, "url", e.target.value)} />
-                        <button type="button" onClick={() => handleRemoveLink(index)} className="h-11 px-4 text-[#d92d20] text-[13px] font-bold hover:bg-[#fff5f5] rounded-md transition-colors whitespace-nowrap border border-transparent hover:border-[#fed7d7]">
-                          Remove
-                        </button>
-                      </div>
-                    ))}
+                )}
+              </div>
+
+              {form.resumeUrl && (
+                <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 truncate">
+                    <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                      {extractFilename(form.resumeUrl)}
+                    </span>
                   </div>
-                  <button type="button" onClick={handleAddLink} className="mt-4 h-10 px-5 bg-white border border-[#d8d8d8] text-[#141414] text-[13px] font-bold rounded-md hover:bg-[#fafafa] transition-colors inline-flex items-center justify-center">
-                    + Add another link
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await deleteResume();
+                        await getProfile();
+                        toast.success("Resume deleted");
+                      } catch {
+                        setError("Failed to delete resume");
+                      }
+                    }}
+                    className="text-rose-600 font-bold hover:underline shrink-0 ml-2"
+                  >
+                    Delete
                   </button>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-6">
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Portfolio URL</label>
-                    <input className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" value={form.portfolioUrl} onChange={updateField("portfolioUrl")} placeholder="https://" />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2">Website URL</label>
-                    <input className="w-full h-11 border border-[#e5e5e5] rounded-md bg-white px-3.5 text-[#141414] text-[14px] focus:outline-none focus:border-[#c99b2e] focus:ring-1 focus:ring-[#c99b2e] transition-all" value={form.websiteUrl} onChange={updateField("websiteUrl")} placeholder="https://" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2 flex items-center">
-                      Public profile URL <span className="text-[#8c8c8c] font-normal ml-1.5">(Auto-generated · share-friendly · works only at 100%)</span>
-                    </label>
-                    <input className="w-full max-w-md h-11 border border-[#e5e5e5] rounded-md bg-[#fafafa] px-3.5 text-[#8c8c8c] text-[14px] outline-none cursor-not-allowed" value={publicSlug} readOnly />
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
-          </div>
 
-          <div className="profile-edit-content animate-fade">
-            <div id="section-documents" className="bg-white rounded-xl border border-[#e5e5e5] mb-8 scroll-mt-24">
-              <div className="px-6 py-5 border-b border-[#e5e5e5]">
-                <h2 className="text-[16px] font-bold text-[#141414] m-0">Documents</h2>
+            {/* External Certifications */}
+            <div className="space-y-3">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                External Industry Certificates
+              </label>
+              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-5 text-center bg-slate-50/50 dark:bg-slate-850 relative">
+                {certificateUploading ? (
+                  <Loader2 className="h-6 w-6 animate-spin text-amber-600 mx-auto" />
+                ) : (
+                  <label className="cursor-pointer block">
+                    <Plus className="w-6 h-6 text-slate-400 mx-auto mb-1.5" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                      Add Certificates
+                    </span>
+                    <span className="text-[10px] text-slate-400">PDF, PNG, JPG (Multiple)</span>
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      multiple
+                      hidden
+                      onChange={handleDocumentUpload}
+                    />
+                  </label>
+                )}
               </div>
-              <div className="p-6">
-                <h3 className="text-[11px] font-bold text-[#5c5c5c] uppercase tracking-widest mb-6">DOCUMENTS · SUPPORTING EVIDENCE</h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2 flex flex-col sm:flex-row sm:items-center gap-1">
-                      CV / Resume <span className="text-[#8c8c8c] font-normal">(PDF, DOC, DOCX · up to 5 MB)</span>
-                    </label>
-                    
-                    <div className="w-full min-h-[88px] flex items-center justify-center border border-dashed border-[#d8d8d8] rounded-md bg-[#fafafa] p-4 text-center text-[13px] font-medium transition-colors hover:bg-[#f5f5f5]">
-                      {resumeUploading ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                      ) : (
-                        <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer text-[#5c5c5c]">
-                          <span className="font-bold text-[#141414]">{form.resumeUrl ? "Replace Resume" : "Upload Resume"}</span>
-                          <span className="text-[11px] mt-1">Drag file here or click to browse</span>
-                          <input type="file" accept=".pdf,.doc,.docx" hidden onChange={handleResumeUpload} />
-                        </label>
-                      )}
-                    </div>
-
-                    {form.resumeUrl && (
-                      <div className="mt-3 flex items-center justify-between p-3 bg-[#f9f9f9] border border-[#e5e5e5] rounded-md">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          <svg className="w-4 h-4 text-[#5c5c5c] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                          <span className="text-[13px] text-[#141414] truncate font-medium">{extractFilename(form.resumeUrl)}</span>
-                        </div>
-                        <button type="button" onClick={async () => {
+              {certificates.length > 0 && (
+                <div className="space-y-1.5">
+                  {certificates.map((cert) => (
+                    <div
+                      key={cert.id}
+                      className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <Award className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                          {cert.title}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!cert.id) return;
                           try {
-                            await deleteResume();
+                            await deleteCertificate(cert.id);
                             await getProfile();
+                            toast.success("Certificate deleted");
                           } catch {
-                            setError("Failed to delete resume");
+                            setError("Failed to delete certificate");
                           }
-                        }} className="text-[#d92d20] text-[12px] font-bold hover:underline flex-shrink-0 ml-4">
-                          Remove
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#141414] mb-2 flex flex-col sm:flex-row sm:items-center gap-1">
-                      Externally Earned Certificates <span className="text-[#8c8c8c] font-normal">(Multiple supported)</span>
-                    </label>
-
-                    <div className="w-full min-h-[88px] flex items-center justify-center border border-dashed border-[#d8d8d8] rounded-md bg-[#fafafa] p-4 text-center text-[13px] font-medium transition-colors hover:bg-[#f5f5f5]">
-                      {certificateUploading ? (
-                        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                      ) : (
-                        <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer text-[#5c5c5c]">
-                          <span className="font-bold text-[#141414]">Add Certificate</span>
-                          <span className="text-[11px] mt-1">Upload PDF, PNG, JPG</span>
-                          <input type="file" accept=".pdf,.png,.jpg,.jpeg" multiple hidden onChange={handleDocumentUpload} />
-                        </label>
-                      )}
+                        }}
+                        className="text-slate-400 hover:text-rose-600 p-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-
-                    {certificates.length > 0 && (
-                      <div className="mt-3 flex flex-col gap-2">
-                        {certificates.map((certificate) => (
-                          <div key={certificate.id} className="flex items-center justify-between p-3 bg-[#f9f9f9] border border-[#e5e5e5] rounded-md">
-                            <div className="flex items-center gap-2 overflow-hidden">
-                              <svg className="w-4 h-4 text-[#5c5c5c] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                              <span className="text-[13px] text-[#141414] truncate font-medium">{certificate.title || "Certificate"}</span>
-                            </div>
-                            <button type="button" onClick={async () => {
-                              if (!certificate.id) return;
-                              try {
-                                await deleteCertificate(certificate.id);
-                                await getProfile();
-                              } catch {
-                                setError("Failed to delete certificate");
-                              }
-                            }} className="text-[#d92d20] text-[12px] font-bold hover:underline flex-shrink-0 ml-4">
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  ))}
                 </div>
-
-              </div>
+              )}
             </div>
           </div>
+        </section>
+      </main>
 
-        </main>
-      </div>
-
+      {/* OTP Modal */}
       {showOTPModal && (
         <ProfileVerifyOTP
           isOpen={showOTPModal}
@@ -1638,11 +2065,11 @@ const ProfileData: React.FC = () => {
             getProfile();
             setIsEditing(false);
             setShowOTPModal(false);
+            toast.success("Profile saved successfully.");
           }}
         />
       )}
-
-    </>
+    </div>
   );
 };
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 import "../../components/common/profile/ProfileData.css";
 
 import { useProfile } from "../../hooks/profile/useProfile";
@@ -13,82 +14,92 @@ import type { UpdateProfileRequest, CareerHistory, PersonalLink } from "../../ty
 import { Country } from "country-state-city";
 import parsePhoneNumberFromString from "libphonenumber-js";
 import LanguageList from "language-list";
-import { Loader2, Upload, Plus, X } from "lucide-react";
+import {
+  Loader2,
+  Upload,
+  Plus,
+  X,
+  ShieldCheck,
+  CheckCircle2,
+  User,
+  Briefcase,
+  Link2,
+  FileText,
+  Trash2,
+  Globe,
+  Camera,
+  ArrowRight,
+  ArrowLeft,
+  Lock,
+  Sparkles,
+  ExternalLink,
+  Award,
+  Check,
+  Building2,
+  Calendar,
+  AlertCircle,
+  Copy,
+  ChevronRight,
+  Eye
+} from "lucide-react";
 
-import { Card } from "../../components/ui/Card";
-import { Button } from "../../components/ui/Button";
-import { Input } from "../../components/ui/Input";
-import { Select } from "../../components/ui/Select";
-import { Avatar } from "../../components/ui/Avatar";
 import CareerHistorySection from "../../components/common/profile/modals/CareerHistorySection";
 import nexusLogo from "../../assets/brand/nexus-logo-ink.svg";
-
 import { Skeleton } from "../../components/ui/Skeleton/Skeleton";
 import ProfileVerifyOTP from "../../components/common/profile/ProfileVerifyOTP";
 
 const CompleteProfileSkeleton: React.FC = () => {
   return (
-    <div className="min-h-screen lg:h-screen bg-gray-50 font-sans text-gray-900 flex flex-col lg:overflow-hidden">
-      <header className="h-[72px] bg-white border-b border-gray-200 flex items-center px-4 sm:px-8 shrink-0 z-10 relative">
-        <Skeleton className="h-9 w-32" />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 flex flex-col">
+      {/* Header Skeleton */}
+      <header className="h-18 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 sm:px-10 shrink-0">
+        <Skeleton className="h-9 w-36 rounded-lg" />
+        <Skeleton className="h-9 w-32 rounded-xl" />
       </header>
 
-      <div className="flex-1 flex justify-center lg:overflow-hidden">
-        <div className="w-full flex flex-col lg:flex-row gap-8 lg:gap-11 h-full pt-10 px-4 md:px-6 lg:pt-11 lg:px-14">
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Sidebar Skeleton */}
-          <div className="w-full lg:w-[320px] flex-shrink-0 space-y-6">
-            <div className="space-y-2">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-8 w-56" />
+          <div className="lg:col-span-4 space-y-6">
+            <div className="space-y-3">
+              <Skeleton className="h-6 w-32 rounded-full" />
+              <Skeleton className="h-8 w-64 rounded-lg" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-4/5" />
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex items-center justify-between">
-              <div className="flex-1 mr-4">
-                <Skeleton className="h-2 w-full rounded-full" />
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-6 w-14" />
               </div>
-              <Skeleton className="h-8 w-14" />
+              <Skeleton className="h-2.5 w-full rounded-full" />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-12 w-full rounded-full" />
+                <Skeleton key={i} className="h-16 w-full rounded-2xl" />
               ))}
             </div>
           </div>
 
           {/* Right Content Skeleton */}
-          <div className="flex-1 min-w-0 pb-10">
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 sm:p-10 space-y-6">
-              <Skeleton className="h-4 w-48 border-b pb-2" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-11 w-full rounded-lg" />
-                </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-11 w-full rounded-lg" />
-                </div>
+          <div className="lg:col-span-8">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-6 sm:p-10 space-y-6">
+              <Skeleton className="h-6 w-56 rounded-lg" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <Skeleton className="h-11 w-full rounded-xl" />
+                <Skeleton className="h-11 w-full rounded-xl" />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-11 w-full rounded-lg" />
-                </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-11 w-full rounded-lg" />
-                </div>
+              <Skeleton className="h-11 w-full rounded-xl" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <Skeleton className="h-11 w-full rounded-xl" />
+                <Skeleton className="h-11 w-full rounded-xl" />
               </div>
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-24 w-full rounded-lg" />
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <Skeleton className="h-10 w-28 rounded-lg" />
-                <Skeleton className="h-10 w-36 rounded-lg" />
+              <Skeleton className="h-32 w-full rounded-2xl" />
+              <div className="flex justify-between pt-6 border-t border-slate-100 dark:border-slate-800">
+                <Skeleton className="h-10 w-28 rounded-xl" />
+                <Skeleton className="h-10 w-36 rounded-xl" />
               </div>
             </div>
           </div>
@@ -123,11 +134,11 @@ type FormState = {
   educationCompletionYear: string;
 };
 
-const tabs: Array<{ id: TabId; label: string }> = [
-  { id: "personal", label: "Personal" },
-  { id: "professional", label: "Professional" },
-  { id: "links", label: "Personal links" },
-  { id: "documents", label: "Documents" },
+const tabs: Array<{ id: TabId; label: string; sublabel: string; icon: any }> = [
+  { id: "personal", label: "Personal Details", sublabel: "Core Identity & Credentials", icon: User },
+  { id: "professional", label: "Professional", sublabel: "Career, Industry & Skills", icon: Briefcase },
+  { id: "links", label: "Personal Links", sublabel: "Portfolios & Social Handles", icon: Link2 },
+  { id: "documents", label: "Documents", sublabel: "Resume & Evidence", icon: FileText },
 ];
 
 const emptyForm: FormState = {
@@ -181,10 +192,10 @@ const toDateInputValue = (value?: string | null) =>
 const CompleteProfile: React.FC = () => {
   const navigate = useNavigate();
 
-  const { uploadPhoto, uploadResume, deletePhoto } = useProfileAssets();
+  const { uploadPhoto, uploadResume, deletePhoto, deleteResume } = useProfileAssets();
   const { profile, getProfile, saveProfile, loading } = useProfile();
   const { data: skills = [], isLoading: skillsLoading } = useSkills();
-  const { uploadCertificate, certificates, refreshCertificates } = useProfileCertificates();
+  const { uploadCertificate, deleteCertificate, certificates, refreshCertificates } = useProfileCertificates();
   const { uploadAsset } = useAssets();
 
   const [activeTab, setActiveTab] = useState<TabId>("personal");
@@ -192,13 +203,14 @@ const CompleteProfile: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const [extraLinks, setExtraLinks] = useState<PersonalLink[]>([{ title: "", url: "" }]);
+  const [extraLinks, setExtraLinks] = useState<PersonalLink[]>([{ title: "LinkedIn", url: "" }]);
   const [careerHistory, setCareerHistory] = useState<CareerHistory[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [photoUploading, setPhotoUploading] = useState(false);
   const [resumeUploading, setResumeUploading] = useState(false);
   const [certificateUploading, setCertificateUploading] = useState(false);
   const [showOTPModal, setShowOTPModal] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   // Local state for skills and language
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
@@ -255,7 +267,7 @@ const CompleteProfile: React.FC = () => {
     });
 
     setPhotoPreview(p.photoUrl || "");
-    setExtraLinks(profile.personalLinks?.length ? profile.personalLinks : [{ title: "", url: "" }]);
+    setExtraLinks(profile.personalLinks?.length ? profile.personalLinks : [{ title: "LinkedIn", url: "" }]);
     setCareerHistory(profile.professionalProfile?.careerHistory || []);
     setSelectedSkills(profile.skills?.map((item) => item.name) || []);
     setLearningInterests(profile.learningInterests?.map((item) => item.name) || []);
@@ -276,13 +288,14 @@ const CompleteProfile: React.FC = () => {
 
   const completed = Number(profile?.profileCompleteness || 0);
 
-  const getTabProgress = useCallback((tabId: TabId): string => {
+  const getTabProgress = useCallback((tabId: TabId): { filled: number; total: number; isDone: boolean } => {
     switch (tabId) {
-      case "personal":
+      case "personal": {
         let filled = 0;
+        const total = 10;
         if (form.firstName) filled++;
         if (form.lastName) filled++;
-        if (profile?.email) filled++; // Email is fixed in this view
+        if (profile?.email) filled++;
         if (form.certificateName) filled++;
         if (form.dob) filled++;
         if (form.gender) filled++;
@@ -290,29 +303,35 @@ const CompleteProfile: React.FC = () => {
         if (form.countryName) filled++;
         if (form.mobileNumber) filled++;
         if (form.photoUrl) filled++;
-        if (form.titlePrefix) filled++;
-        if (form.preferredLanguage) filled++;
-        return `${filled}/12`;
-      case "professional":
-        let pfilled = 0;
-        if (form.currentRole) pfilled++;
-        if (form.industry) pfilled++;
-        if (form.experienceLevel) pfilled++;
-        if (learningInterests.length > 0) pfilled++;
-        return `${pfilled}/4`;
-      case "links":
-        let lfilled = 0;
-        if (extraLinks.some((l) => cleanUrl(l.url))) lfilled++;
-        return `${lfilled}/1`;
-      case "documents":
-        let d = 0;
-        if (form.resumeUrl) d++;
-        if (certificates.length > 0) d++;
-        return `${d}/2`;
+        return { filled, total, isDone: filled >= 8 };
+      }
+      case "professional": {
+        let filled = 0;
+        const total = 4;
+        if (form.currentRole) filled++;
+        if (form.industry) filled++;
+        if (form.experienceLevel) filled++;
+        if (selectedSkills.length > 0 || learningInterests.length > 0) filled++;
+        return { filled, total, isDone: filled >= 3 };
+      }
+      case "links": {
+        let filled = 0;
+        const total = 2;
+        if (extraLinks.some((l) => cleanUrl(l.url))) filled++;
+        if (form.portfolioUrl || form.websiteUrl) filled++;
+        return { filled, total, isDone: filled >= 1 };
+      }
+      case "documents": {
+        let filled = 0;
+        const total = 2;
+        if (form.resumeUrl) filled++;
+        if (certificates.length > 0) filled++;
+        return { filled, total, isDone: filled >= 1 };
+      }
       default:
-        return "0/1";
+        return { filled: 0, total: 1, isDone: false };
     }
-  }, [form, extraLinks, certificates, profile]);
+  }, [form, extraLinks, certificates, profile, selectedSkills, learningInterests]);
 
   const updateField = (field: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -320,21 +339,17 @@ const CompleteProfile: React.FC = () => {
     };
 
   const handleLinkChange = (index: number, field: "title" | "url", value: string) => {
-    setExtraLinks(prev =>
-      prev.map((link, idx) =>
-        idx === index
-          ? { ...link, [field]: value }
-          : link
-      )
+    setExtraLinks((prev) =>
+      prev.map((link, idx) => (idx === index ? { ...link, [field]: value } : link))
     );
   };
 
   const handleAddLink = () => {
-    setExtraLinks(prev => [...prev, { title: "", url: "" }]);
+    setExtraLinks((prev) => [...prev, { title: "Website", url: "" }]);
   };
 
   const handleRemoveLink = (index: number) => {
-    setExtraLinks(prev => prev.filter((_, idx) => idx !== index));
+    setExtraLinks((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const handleAddLearningInterest = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -342,14 +357,14 @@ const CompleteProfile: React.FC = () => {
       e.preventDefault();
       const val = learningInterestInput.trim();
       if (val && !learningInterests.some((item) => item.toLowerCase() === val.toLowerCase())) {
-        setLearningInterests(prev => [...prev, val]);
+        setLearningInterests((prev) => [...prev, val]);
       }
       setLearningInterestInput("");
     }
   };
 
   const removeLearningInterest = (interest: string) => {
-    setLearningInterests(prev => prev.filter(item => item !== interest));
+    setLearningInterests((prev) => prev.filter((item) => item !== interest));
   };
 
   const handleSave = async (isFinal: boolean = false) => {
@@ -357,7 +372,7 @@ const CompleteProfile: React.FC = () => {
     setError("");
     setNotice("");
 
-    // Phone validation — only block if a phone is provided AND is clearly invalid
+    // Phone validation
     let mobileNumberToSave = form.mobileNumber.trim() || null;
     let phoneCountryCodeToSave = form.phoneCountryCode || null;
     if (form.mobileNumber.trim()) {
@@ -372,13 +387,11 @@ const CompleteProfile: React.FC = () => {
         phoneNum = parsePhoneNumberFromString(fullPhone, isoCode);
       }
 
-      // Only block save if phone is provided but clearly invalid (not just country mismatch)
       if (phoneNum && !phoneNum.isValid()) {
-        setError("Invalid mobile number format. Please check the number and try again.");
+        setError("Invalid mobile number format. Please check your phone digits and country code.");
         setSaving(false);
         return false;
       }
-      // If we got a valid parsed number, use the E.164 national number
       if (phoneNum?.isValid()) {
         mobileNumberToSave = phoneNum.nationalNumber;
         phoneCountryCodeToSave = `+${phoneNum.countryCallingCode}`;
@@ -395,7 +408,7 @@ const CompleteProfile: React.FC = () => {
       }
       const age = (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
       if (age < 13) {
-        setError("User must be at least 13 years old.");
+        setError("User must be at least 13 years of age.");
         setSaving(false);
         return false;
       }
@@ -414,7 +427,7 @@ const CompleteProfile: React.FC = () => {
     });
 
     if (incompleteCareer) {
-      setError("Please complete the employer, role, and start date for each experience entry, or remove the empty entry.");
+      setError("Please fill out the employer, job title, and start date for each experience entry, or delete the empty card.");
       setSaving(false);
       return false;
     }
@@ -439,16 +452,14 @@ const CompleteProfile: React.FC = () => {
         educationCompletionYear: form.educationCompletionYear ? parseInt(form.educationCompletionYear, 10) : null,
         websiteUrl: cleanUrl(form.websiteUrl) || null,
         portfolioUrl: cleanUrl(form.portfolioUrl) || null,
-        // Always send skills array so removals are persisted (empty array clears all skills)
         skills: selectedSkills,
-        // Always send learningInterests so removals are persisted
         learningInterests: learningInterests,
-        careerHistory: careerHistory.filter((item) =>
-          item.employer?.trim() || item.jobTitle?.trim() || item.startDate || item.endDate
-        ).map((item) => ({
-          ...item,
-          endDate: item.isCurrentJob ? null : (item.endDate || null),
-        })),
+        careerHistory: careerHistory
+          .filter((item) => item.employer?.trim() || item.jobTitle?.trim() || item.startDate || item.endDate)
+          .map((item) => ({
+            ...item,
+            endDate: item.isCurrentJob ? null : item.endDate || null,
+          })),
         personalLinks: extraLinks
           .map(normalizePersonalLink)
           .filter((link): link is PersonalLink => Boolean(link)),
@@ -462,7 +473,8 @@ const CompleteProfile: React.FC = () => {
       }
 
       await getProfile();
-      setNotice("Profile saved successfully.");
+      setNotice("Profile changes saved successfully.");
+      toast.success("Profile saved successfully");
 
       if (isFinal) {
         localStorage.setItem("skip_complete_profile", "true");
@@ -470,7 +482,9 @@ const CompleteProfile: React.FC = () => {
       }
       return true;
     } catch (err: any) {
-      setError(err.response?.data?.message ?? err.message ?? "Failed to save profile");
+      const errMsg = err.response?.data?.message ?? err.message ?? "Failed to save profile";
+      setError(errMsg);
+      toast.error(errMsg);
       return false;
     } finally {
       setSaving(false);
@@ -485,6 +499,14 @@ const CompleteProfile: React.FC = () => {
       if (currentIndex < tabOrder.length - 1) {
         setActiveTab(tabOrder[currentIndex + 1]);
       }
+    }
+  };
+
+  const handlePrevious = () => {
+    const tabOrder: TabId[] = ["personal", "professional", "links", "documents"];
+    const currentIndex = tabOrder.indexOf(activeTab);
+    if (currentIndex > 0) {
+      setActiveTab(tabOrder[currentIndex - 1]);
     }
   };
 
@@ -515,8 +537,10 @@ const CompleteProfile: React.FC = () => {
 
       setPhotoPreview(updatedProfile?.profile?.photoUrl || URL.createObjectURL(file));
       setForm((prev) => ({ ...prev, photoUrl: updatedProfile?.profile?.photoUrl || "" }));
+      toast.success("Profile photo updated successfully!");
     } catch (err: any) {
       setError(err.message || "Failed to upload photo");
+      toast.error("Failed to upload photo");
     } finally {
       setPhotoUploading(false);
     }
@@ -530,8 +554,10 @@ const CompleteProfile: React.FC = () => {
       setPhotoPreview("");
       setForm((prev) => ({ ...prev, photoUrl: "" }));
       await getProfile();
+      toast.success("Profile photo removed");
     } catch (err: any) {
       setError(err.message || "Failed to remove photo");
+      toast.error("Failed to remove photo");
     } finally {
       setPhotoUploading(false);
     }
@@ -553,8 +579,26 @@ const CompleteProfile: React.FC = () => {
       const asset = await uploadAsset(formData);
       await uploadResume(asset.id);
       await getProfile();
+      toast.success("Resume uploaded successfully!");
     } catch (err: any) {
       setError(err.message || "Failed to upload resume");
+      toast.error("Failed to upload resume");
+    } finally {
+      setResumeUploading(false);
+    }
+  };
+
+  const handleDeleteResume = async () => {
+    try {
+      setResumeUploading(true);
+      setError("");
+      await deleteResume();
+      setForm((prev) => ({ ...prev, resumeUrl: "" }));
+      await getProfile();
+      toast.success("Resume removed");
+    } catch (err: any) {
+      setError(err.message || "Failed to delete resume");
+      toast.error("Failed to delete resume");
     } finally {
       setResumeUploading(false);
     }
@@ -583,258 +627,582 @@ const CompleteProfile: React.FC = () => {
       }
 
       await getProfile();
+      toast.success("Certificate(s) uploaded successfully!");
     } catch (err: any) {
       setError(err.response?.data?.message ?? err.message ?? "Failed to upload certificate");
+      toast.error("Failed to upload certificate");
     } finally {
       setCertificateUploading(false);
     }
   };
 
+  const handleDeleteCertificate = async (certId: string) => {
+    try {
+      setError("");
+      await deleteCertificate(certId);
+      await getProfile();
+      toast.success("Certificate deleted");
+    } catch (err: any) {
+      setError(err.message || "Failed to delete certificate");
+      toast.error("Failed to delete certificate");
+    }
+  };
+
+  const handleCopyPublicUrl = () => {
+    if (!profile?.id) return;
+    const fullUrl = `${window.location.origin}/profile/${profile.id}`;
+    navigator.clipboard.writeText(fullUrl);
+    setCopiedLink(true);
+    toast.success("Public profile link copied to clipboard!");
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
   if (loading && !profile) {
     return <CompleteProfileSkeleton />;
   }
+
+  const currentTabIdx = tabs.findIndex((t) => t.id === activeTab);
+
   return (
-    <div className="min-h-screen lg:h-screen bg-gray-50 font-sans text-gray-900 flex flex-col lg:overflow-hidden">
-      <header className="h-[72px] bg-white border-b border-gray-200 flex items-center px-4 sm:px-8 shrink-0 z-10 relative">
-        <img src={nexusLogo} alt="Nexus Academy" className="h-9" />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 flex flex-col">
+      {/* Top Header */}
+      <header className="h-18 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sm:px-8 shrink-0 sticky top-0 z-20">
+        <div className="flex items-center gap-4">
+          <img src={nexusLogo} alt="Nexus Academy" className="h-8 w-auto cursor-pointer" onClick={() => navigate("/member-dashboard")} />
+          <div className="h-5 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block" />
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+            <span>Member Onboarding</span>
+            <span>&bull;</span>
+            <span className="text-amber-700 dark:text-amber-400 font-semibold">Profile Completion</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {profile?.email && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="font-medium">{profile.email}</span>
+            </div>
+          )}
+
+          <button
+            onClick={handleSkip}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <span>Skip for now</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </header>
 
-      <div className="flex-1 flex justify-center lg:overflow-hidden">
-        <div className="w-full flex flex-col lg:flex-row gap-8 lg:gap-11 h-full pt-10 px-4 md:px-6 lg:pt-11 lg:px-14">
-
-          {/* Left Sidebar */}
-          <div className="w-full lg:w-[320px] flex-shrink-0 lg:h-full lg:overflow-y-auto pb-6 lg:pb-20 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="mb-8 relative">
-              <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">POST-SIGNUP</h4>
-              <h1 className="text-2xl font-bold text-gray-900 mb-3">Complete your profile</h1>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Signup already captured your First Name, Last Name, Email and Country. Finish the remaining fields to reach 100% completion, required before your learning credential can be issued.
+      {/* Main Layout Area */}
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Sidebar (4 cols) */}
+          <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
+            {/* Header info */}
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60">
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span>Identity & Accreditations</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Complete your profile
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                Finish the remaining sections to achieve 100% completion. A verified profile is required before accredited diplomas and credentials can be officially issued.
               </p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-6 flex items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
-              <div className="flex-1 mr-4">
-                <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                  <div className="bg-[#eab308] h-full transition-all" style={{ width: `${completed}%` }} />
+            {/* Completeness Card */}
+            <div className="bg-gradient-to-br from-white via-white to-amber-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-amber-950/20 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Profile Completeness
+                  </span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-3xl font-black text-slate-900 dark:text-white">{completed}%</span>
+                    <span className="text-xs font-semibold text-slate-500">
+                      {completed >= 80 ? "Eligible for Diplomas" : "Incomplete"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm shadow-inner ${
+                  completed >= 80
+                    ? "bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300"
+                    : "bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300"
+                }`}>
+                  {completed >= 80 ? <Check className="w-6 h-6" /> : <Sparkles className="w-6 h-6" />}
                 </div>
               </div>
-              <div className="text-right">
-                <span className="block text-2xl font-bold">{completed}%</span>
-                <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">COMPLETE</span>
+
+              {/* Progress Bar */}
+              <div className="space-y-1.5">
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      completed >= 80 ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-gradient-to-r from-amber-500 to-yellow-500"
+                    }`}
+                    style={{ width: `${completed}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Minimum 80% to certify</span>
+                  <span>100% Goal</span>
+                </div>
               </div>
             </div>
 
-            <nav className="space-y-2">
-              {tabs.map((tab) => {
+            {/* Tabs List */}
+            <nav className="space-y-2.5">
+              {tabs.map((tab, idx) => {
                 const isActive = activeTab === tab.id;
+                const { filled, total, isDone } = getTabProgress(tab.id);
+                const IconComponent = tab.icon;
+
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center justify-between px-5 py-3.5 rounded-full border font-medium text-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${isActive
-                      ? "bg-[#fef08a] border-[#eab308] text-gray-900 shadow-sm"
-                      : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                      }`}
+                    className={`w-full flex items-center justify-between p-4 rounded-2xl border text-left transition-all duration-200 group ${
+                      isActive
+                        ? "bg-amber-50/80 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700 shadow-sm"
+                        : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                    }`}
                   >
-                    <span>{tab.label}</span>
-                    <span className={`text-xs font-bold ${isActive ? "text-gray-900" : "text-gray-500"}`}>
-                      {getTabProgress(tab.id)}
-                    </span>
+                    <div className="flex items-center gap-3.5">
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                          isActive
+                            ? "bg-amber-500 text-slate-950 font-bold"
+                            : isDone
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                        }`}
+                      >
+                        {isDone ? <Check className="w-4 h-4 stroke-[2.5]" /> : <IconComponent className="w-4 h-4" />}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-bold ${isActive ? "text-amber-950 dark:text-amber-200" : "text-slate-800 dark:text-slate-200"}`}>
+                            {tab.label}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 line-clamp-1">{tab.sublabel}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider ${
+                          isDone
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            : isActive
+                            ? "bg-amber-200/80 text-amber-900 dark:bg-amber-900/60 dark:text-amber-300"
+                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                        }`}
+                      >
+                        {filled}/{total}
+                      </span>
+                      <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${isActive ? "translate-x-0.5 text-amber-700" : ""}`} />
+                    </div>
                   </button>
                 );
               })}
             </nav>
 
-
+            {/* Security Guarantee Note */}
+            <div className="p-4 rounded-2xl bg-slate-100/70 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 text-xs text-slate-500 space-y-1.5">
+              <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+                <Lock className="w-3.5 h-3.5 text-slate-500" />
+                <span>Immutable Credential Security</span>
+              </div>
+              <p className="leading-relaxed text-[11px]">
+                Your diploma name and sensitive identity fields are digitally signed for authenticity. Sensitive changes require OTP re-verification.
+              </p>
+            </div>
           </div>
 
-          {/* Right Content Area */}
-          <div className="flex-1 min-w-0 lg:h-full lg:overflow-y-auto pb-10 lg:pb-20 lg:pr-2">
-            <Card key={activeTab} className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 sm:p-10 relative animate-zoom-out-up lg:mb-8">
-
+          {/* Right Content Form Area (8 cols) */}
+          <div className="lg:col-span-8">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-6 sm:p-10 relative">
+              {/* Error Notice */}
               {error && (
-                <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 text-sm text-red-700">
-                  {error}
+                <div className="mb-6 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 rounded-xl p-4 text-sm text-red-800 dark:text-red-300 flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-semibold">Unable to save profile</p>
+                    <p className="text-xs text-red-700 dark:text-red-400 mt-0.5">{error}</p>
+                  </div>
                 </div>
               )}
 
+              {/* Success Notice */}
               {notice && (
-                <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 text-sm text-green-700 flex items-center gap-2">
-                  <span>✓</span> {notice}
+                <div className="mb-6 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl p-4 text-sm text-emerald-800 dark:text-emerald-300 flex items-center gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span className="font-medium">{notice}</span>
                 </div>
               )}
 
+              {/* Tab 1: Personal Identity */}
               {activeTab === "personal" && (
                 <div className="space-y-6">
-                  <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 pb-2">Personal - Core Identity and Demographic</h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">First Name <span className="text-red-500">*</span></label>
-                      <Input type="text" value={form.firstName} onChange={updateField("firstName")} className="w-full bg-[#eeeeea] border border-(--line) rounded-lg px-4 py-2.5 text-sm focus:bg-white focus:border-gray-300 focus:ring-0 transition-colors" />
-                    </div>
-                    <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Last Name <span className="text-red-500">*</span></label>
-                      <Input type="text" value={form.lastName} onChange={updateField("lastName")} className="w-full bg-[#eeeeea] border border-(--line) rounded-lg px-4 py-2.5 text-sm focus:bg-white focus:border-gray-300 focus:ring-0 transition-colors" />
-                    </div>
+                  <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                      <User className="w-4 h-4 text-amber-600" />
+                      Core Identity & Accreditation Data
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Information used for age verification, identity validation, and official diploma generation.
+                    </p>
                   </div>
 
+                  {/* Profile Photo Uploader */}
                   <div>
-                    <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Email <span className="text-red-500">*</span> <span className="text-(--ink-faint) normal-case">(OTP required to change)</span></label>
-                    <Input type="text" disabled value={profile?.email || ""} className="w-full bg-[#eeeeea] border border-(--line) rounded-lg px-4 py-2.5 text-sm text-(#eeeeea) cursor-not-allowed" />
-                  </div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">
+                      Profile Avatar
+                    </label>
+                    <div className="flex flex-col sm:flex-row items-center gap-5 p-5 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50/60 dark:bg-slate-850 hover:bg-slate-50 transition-colors">
+                      <div className="relative group shrink-0">
+                        {photoPreview ? (
+                          <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-800 shadow-md">
+                            <img src={photoPreview} alt="Avatar" className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-20 h-20 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center justify-center font-bold text-xl shadow-inner">
+                            {form.firstName ? form.firstName.charAt(0).toUpperCase() : <User className="w-8 h-8" />}
+                          </div>
+                        )}
+                        {photoUploading && (
+                          <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
+                            <Loader2 className="w-6 h-6 text-white animate-spin" />
+                          </div>
+                        )}
+                      </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Title / Prefix</label>
-                      <Select value={form.titlePrefix} onChange={updateField("titlePrefix")} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:border-(--honey) focus:ring-(--honey) bg-white">
-                        <option value="">Select...</option>
-                        <option value="MR">Mr.</option>
-                        <option value="MRS">Mrs.</option>
-                        <option value="MS">Ms.</option>
-                        <option value="DR">Dr.</option>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Name on your learning credential <span className="text-red-500">*</span></label>
-                      <Input type="text" value={form.certificateName} onChange={updateField("certificateName")} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:border-(--ink-label) focus:ring-(--ink-label)" />
-                      <p className="text-[14px] text-(--ink-mute) mt-1 leading-tight">Pre-filled from your First Name and Last Name. Edit if you want a different name shown on your learning credential(s). OTP required to change after first save.</p>
-                    </div>
-                  </div>
+                      <div className="space-y-2 flex-1 text-center sm:text-left">
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                          <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold shadow-sm transition-all">
+                            <Camera className="w-3.5 h-3.5" />
+                            <span>{photoPreview ? "Change Photo" : "Upload Photo"}</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handlePhotoUpload}
+                              className="hidden"
+                            />
+                          </label>
 
-                  <div>
-                    <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Photo</label>
-                    <div className="border border-dashed border-gray-300 rounded-lg bg-gray-50 p-6 flex items-center justify-center relative hover:bg-gray-100 transition-colors">
-                      {photoPreview ? (
-                        <div className="flex items-center gap-4">
-                          <Avatar src={photoPreview} size={46} className="w-16 h-16 shadow-sm" />
-                          <button type="button" onClick={handleDeletePhoto} className="text-xs font-bold text-red-600 hover:underline">Remove photo</button>
+                          {photoPreview && (
+                            <button
+                              type="button"
+                              onClick={handleDeletePhoto}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Remove</span>
+                            </button>
+                          )}
                         </div>
-                      ) : (
-                        <span className="text-xs text-gray-500">Drag image or click to upload - square JPG/PNG up to 2 MB - preview shown before save</span>
-                      )}
-                      <input type="file" accept="image/*" onChange={handlePhotoUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                      {photoUploading && <div className="absolute inset-0 bg-white/50 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin" /></div>}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Preferred Language</label>
-                      <Select value={form.preferredLanguage} onChange={updateField("preferredLanguage")} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-1 focus:border-(--honey) focus:ring-(--honey)">
-                        <option value="">English</option>
-                        {new LanguageList().getData().map((lang: { code: string; language: string }) => (
-                          <option key={lang.code} value={lang.code}>{lang.language}</option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Date of Birth <span className="text-(--ink-faint) font-normal normal-case">(used for age verification - min 16)</span></label>
-                      <Input type="date" value={form.dob} onChange={updateField("dob")} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:border-(--ink-label) focus:ring-(--ink-label)" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Gender</label>
-                      <Select value={form.gender} onChange={updateField("gender")} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-1 focus:border-(--honey) focus:ring-(--honey)">
-                        <option value="">Select...</option>
-                        <option value="MALE">Male</option>
-                        <option value="FEMALE">Female</option>
-                        <option value="OTHER">Other</option>
-                        <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Country <span className="text-red-500">*</span></label>
-                      <Select value={form.countryName} onChange={(e) => {
-                        const countryName = e.target.value;
-                        const country = countries.find((item) => item.name === countryName);
-                        const phoneCode = country?.phonecode ? `+${country.phonecode}` : "+91";
-                        setForm((current) => ({
-                          ...current,
-                          countryName,
-                          phoneCountryCode: phoneCode,
-                        }));
-                      }} className="w-full border border-gray-300 bg-gray-50 rounded-lg px-4 py-2.5 text-sm focus:bg-white focus:outline-none focus:ring-1 focus:border-(--ink-label) focus:ring-(--ink-label)">
-                        <option value="">Select country</option>
-                        {countries.map((country) => (
-                          <option key={country.isoCode} value={country.name}>{country.name}</option>
-                        ))}
-                      </Select>
-                      <p className="text-[11px] text-gray-400 mt-1">Captured at signup. Edit to update.</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">City</label>
-                      <Input type="text" value={form.city} onChange={updateField("city")} placeholder="e.g. Muscat" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:border-(--ink-label) focus:ring-(--ink-label)" />
-                    </div>
-                    <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Phone</label>
-                      <div className="flex border border-gray-300 rounded-lg overflow-hidden focus-within:outline-none focus-within:ring-1 focus-within:border-(--ink-label) focus-within:ring-(--ink-label)">
-                        <input type="text" value={form.phoneCountryCode} readOnly className="w-[80px] bg-gray-100 border-r border-gray-300 px-3 py-2.5 text-sm text-gray-500 outline-none cursor-not-allowed" />
-                        <input type="tel" value={form.mobileNumber} onChange={(e) => {
-                          let mobileNumber = e.target.value.replace(/\D/g, "");
-                          const selectedCountry = countries.find((c) => c.name.toLowerCase() === form.countryName.trim().toLowerCase());
-                          const isoCode = selectedCountry?.isoCode as any;
-                          if (isoCode) {
-                            let validPrefix = "";
-                            for (let i = 1; i <= mobileNumber.length; i++) {
-                              if (parsePhoneNumberFromString(mobileNumber.substring(0, i), isoCode)?.isValid()) {
-                                validPrefix = mobileNumber.substring(0, i);
-                                break;
-                              }
-                            }
-                            if (validPrefix && mobileNumber.length > validPrefix.length) {
-                              mobileNumber = validPrefix;
-                            }
-                          } else if (mobileNumber.length > 15) {
-                            mobileNumber = mobileNumber.substring(0, 15);
-                          }
-                          setForm((current) => ({ ...current, mobileNumber }));
-                        }} placeholder="Mobile number" inputMode="numeric" className="w-full px-4 py-2.5 text-sm border-none focus:outline-none focus:ring-0" />
+                        <p className="text-[11px] text-slate-400">
+                          Recommended: Square JPG, PNG or WebP, at least 400x400px. Max size 2 MB.
+                        </p>
                       </div>
                     </div>
                   </div>
 
+                  {/* Names (2 cols) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        First Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={form.firstName}
+                        onChange={updateField("firstName")}
+                        placeholder="e.g. Alex"
+                        className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Last Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={form.lastName}
+                        onChange={updateField("lastName")}
+                        placeholder="e.g. Johnson"
+                        className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email (Readonly with badge) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                        Primary Email Address <span className="text-rose-500">*</span>
+                      </label>
+                      <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+                        <Lock className="w-3 h-3 text-slate-400" /> OTP required to modify
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      disabled
+                      value={profile?.email || ""}
+                      className="w-full px-4 py-2.5 text-sm bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-xl text-slate-600 dark:text-slate-300 font-medium cursor-not-allowed"
+                    />
+                  </div>
+
+                  {/* Title Prefix & Certificate Name */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div className="sm:col-span-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Title / Prefix
+                      </label>
+                      <select
+                        value={form.titlePrefix}
+                        onChange={updateField("titlePrefix")}
+                        className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium cursor-pointer"
+                      >
+                        <option value="">None</option>
+                        <option value="MR">Mr.</option>
+                        <option value="MRS">Mrs.</option>
+                        <option value="MS">Ms.</option>
+                        <option value="DR">Dr.</option>
+                        <option value="PROF">Prof.</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Name on Diplomas & Credentials <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={form.certificateName}
+                        onChange={updateField("certificateName")}
+                        placeholder="Full name as you wish it to appear on certificates"
+                        className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all font-semibold"
+                      />
+                      <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-1 flex items-center gap-1 font-medium">
+                        <Award className="w-3.5 h-3.5" />
+                        This exact name will be engraved on your verified certificates.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Language and Date of Birth */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Preferred Language
+                      </label>
+                      <select
+                        value={form.preferredLanguage}
+                        onChange={updateField("preferredLanguage")}
+                        className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium cursor-pointer"
+                      >
+                        <option value="English">English</option>
+                        {new LanguageList().getData().map((lang: { code: string; language: string }) => (
+                          <option key={lang.code} value={lang.code}>
+                            {lang.language}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Date of Birth <span className="text-slate-400 font-normal lowercase">(used for age verification)</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={form.dob}
+                        onChange={updateField("dob")}
+                        className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Gender and Country */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Gender
+                      </label>
+                      <select
+                        value={form.gender}
+                        onChange={updateField("gender")}
+                        className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium cursor-pointer"
+                      >
+                        <option value="">Select gender...</option>
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                        <option value="OTHER">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Country <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        value={form.countryName}
+                        onChange={(e) => {
+                          const countryName = e.target.value;
+                          const country = countries.find((item) => item.name === countryName);
+                          const phoneCode = country?.phonecode ? `+${country.phonecode}` : "+91";
+                          setForm((current) => ({
+                            ...current,
+                            countryName,
+                            phoneCountryCode: phoneCode,
+                          }));
+                        }}
+                        className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium cursor-pointer"
+                      >
+                        <option value="">Select country...</option>
+                        {countries.map((country) => (
+                          <option key={country.isoCode} value={country.name}>
+                            {country.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* City and Mobile Number */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={form.city}
+                        onChange={updateField("city")}
+                        placeholder="e.g. London or Toronto"
+                        className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Mobile Phone Number
+                      </label>
+                      <div className="flex border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 transition-all">
+                        <span className="w-18 bg-slate-100 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700/60 px-3 py-2.5 text-xs font-mono font-bold text-slate-600 dark:text-slate-300 flex items-center justify-center select-none">
+                          {form.phoneCountryCode || "+91"}
+                        </span>
+                        <input
+                          type="tel"
+                          value={form.mobileNumber}
+                          onChange={(e) => {
+                            let mobileNumber = e.target.value.replace(/\D/g, "");
+                            setForm((current) => ({ ...current, mobileNumber }));
+                          }}
+                          placeholder="Phone digits"
+                          inputMode="numeric"
+                          className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border-none focus:outline-none font-medium"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
+              {/* Tab 2: Professional Details */}
               {activeTab === "professional" && (
                 <div className="space-y-6">
-                  <h3 className="text-[12px] font-bold text-(--muted) uppercase tracking-wider border-b border-gray-100 pb-2">Professional - Professional Profile</h3>
+                  <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-amber-600" />
+                      Professional Profile & Expertise
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Highlight your industry domain, role seniority, career milestones, and competencies.
+                    </p>
+                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Current Role</label>
-                      <Input type="text" value={form.currentRole} onChange={updateField("currentRole")} placeholder="e.g. Information Architect" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:border-(--ink-label) focus:ring-(--ink-label)" />
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Current Job Role
+                      </label>
+                      <input
+                        type="text"
+                        value={form.currentRole}
+                        onChange={updateField("currentRole")}
+                        placeholder="e.g. Lead Operations Director"
+                        className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
+                      />
                     </div>
+
                     <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Experience Level</label>
-                      <Select value={form.experienceLevel} onChange={updateField("experienceLevel")} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-1 focus:border-(--honey) focus:ring-(--honey)">
-                        <option value="">Select...</option>
-                        <option value="JUNIOR">Junior</option>
-                        <option value="MID">Mid-level</option>
-                        <option value="SENIOR">Senior</option>
-                        <option value="EXECUTIVE">Executive</option>
-                      </Select>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Experience Level
+                      </label>
+                      <select
+                        value={form.experienceLevel}
+                        onChange={updateField("experienceLevel")}
+                        className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium cursor-pointer"
+                      >
+                        <option value="">Select experience level...</option>
+                        <option value="BEGINNER">Junior / Associate (0 - 2 yrs)</option>
+                        <option value="INTERMEDIATE">Mid-Level Professional (3 - 5 yrs)</option>
+                        <option value="ADVANCED">Senior Specialist (6 - 10 yrs)</option>
+                        <option value="EXPERT">Executive / Director (10+ yrs)</option>
+                      </select>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Industry</label>
-                    <Select value={form.industry} onChange={updateField("industry")} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-1 focus:border-(--honey) focus:ring-(--honey)">
-                      <option value="">Select...</option>
-                      <option value="Technology">Technology</option>
-                      <option value="Finance">Finance</option>
-                      <option value="Healthcare">Healthcare</option>
-                      <option value="Education">Education</option>
-                    </Select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Industry Domain
+                      </label>
+                      <select
+                        value={form.industry}
+                        onChange={updateField("industry")}
+                        className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium cursor-pointer"
+                      >
+                        <option value="">Select domain...</option>
+                        <option value="Facilities & Environmental Services">Facilities & Environmental Services</option>
+                        <option value="Commercial Real Estate">Commercial Real Estate</option>
+                        <option value="Healthcare & Sanitation">Healthcare & Sanitation</option>
+                        <option value="Technology & Data Centers">Technology & Data Centers</option>
+                        <option value="Hospitality & Tourism">Hospitality & Tourism</option>
+                        <option value="Education & Institutional">Education & Institutional</option>
+                        <option value="Logistics & Supply Chain">Logistics & Supply Chain</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Education Graduation Year
+                      </label>
+                      <input
+                        type="number"
+                        min="1960"
+                        max="2035"
+                        value={form.educationCompletionYear}
+                        onChange={updateField("educationCompletionYear")}
+                        placeholder="e.g. 2022"
+                        className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
+                      />
+                    </div>
                   </div>
 
-                  <div className="pt-4">
+                  {/* Career History Section */}
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
                     <CareerHistorySection
                       value={careerHistory}
                       onChange={setCareerHistory}
@@ -842,76 +1210,114 @@ const CompleteProfile: React.FC = () => {
                     />
                   </div>
 
-                  <div className="pt-4">
-                    <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Preferred Skills</label>
-                    <div className="relative max-w-md">
+                  {/* Preferred Skills */}
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                      Operational Skills & Competencies
+                    </label>
+                    <div className="relative max-w-lg">
                       <div className="flex gap-2">
                         <input
                           type="text"
                           value={skillQuery}
-                          onChange={(event) => {
-                            setSkillQuery(event.target.value);
+                          onChange={(e) => {
+                            setSkillQuery(e.target.value);
                             setSkillsOpen(true);
                           }}
                           onFocus={() => setSkillsOpen(true)}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              event.preventDefault();
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
                               addSkill(skillQuery);
                             }
-                            if (event.key === "Escape") setSkillsOpen(false);
+                            if (e.key === "Escape") setSkillsOpen(false);
                           }}
-                          placeholder={skillsLoading ? "Loading skills..." : "Type to search or add a skill"}
-                          className="w-full h-11 border border-gray-300 rounded-lg bg-white px-4 text-sm focus:outline-none focus:border-(--ink-label) focus:ring-1 focus:ring-(--ink-label)"
+                          placeholder={skillsLoading ? "Loading skills database..." : "Type skill name (e.g. Disinfection Protocols)..."}
+                          className="w-full px-4 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
                         />
-                        <button type="button" onClick={() => addSkill(skillQuery)} disabled={!skillQuery.trim()} className="shrink-0 px-3 rounded-lg border border-(--honey) text-sm font-semibold disabled:opacity-40">Add</button>
+                        <button
+                          type="button"
+                          onClick={() => addSkill(skillQuery)}
+                          disabled={!skillQuery.trim()}
+                          className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-sm transition-all disabled:opacity-40"
+                        >
+                          Add
+                        </button>
                       </div>
+
                       {skillsOpen && (filteredSkills.length > 0 || skillQuery.trim()) && (
-                        <div className="absolute z-20 mt-1 w-full max-h-56 overflow-auto rounded-lg border border-gray-200 bg-white p-1 shadow-lg">
+                        <div className="absolute z-20 mt-1.5 w-full max-h-56 overflow-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-1.5 shadow-xl">
                           {filteredSkills.map((skill) => (
-                            <button type="button" key={skill.id} onClick={() => addSkill(skill.name)} className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-yellow-50">{skill.name}</button>
+                            <button
+                              type="button"
+                              key={skill.id}
+                              onClick={() => addSkill(skill.name)}
+                              className="block w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-800 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors"
+                            >
+                              {skill.name}
+                            </button>
                           ))}
-                          {skillQuery.trim() && !skills.some((skill) => skill.name.toLowerCase() === skillQuery.trim().toLowerCase()) && (
-                            <button type="button" onClick={() => addSkill(skillQuery)} className="block w-full rounded border-t border-gray-100 px-3 py-2 text-left text-sm font-semibold hover:bg-yellow-50">Add new skill: {skillQuery.trim()}</button>
+                          {skillQuery.trim() && !skills.some((s) => s.name.toLowerCase() === skillQuery.trim().toLowerCase()) && (
+                            <button
+                              type="button"
+                              onClick={() => addSkill(skillQuery)}
+                              className="block w-full rounded-lg border-t border-slate-100 dark:border-slate-800 px-3 py-2 text-left text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                            >
+                              + Create new skill: &ldquo;{skillQuery.trim()}&rdquo;
+                            </button>
                           )}
                         </div>
                       )}
+
                       {selectedSkills.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-3">
                           {selectedSkills.map((skill) => (
-                            <span key={skill} className="inline-flex items-center gap-1 text-xs bg-gray-100 border border-gray-200 rounded-md px-2 py-1">
-                              {skill}
-                              <button type="button" onClick={() => setSelectedSkills((current) => current.filter((item) => item !== skill))} aria-label={`Remove ${skill}`}><X className="w-3 h-3" /></button>
+                            <span
+                              key={skill}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-2xs"
+                            >
+                              <span>{skill}</span>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedSkills((current) => current.filter((item) => item !== skill))}
+                                className="text-slate-400 hover:text-rose-500 transition-colors"
+                                aria-label={`Remove ${skill}`}
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
                             </span>
                           ))}
                         </div>
                       )}
-                      <p className="mt-2 text-xs text-gray-500">Existing skills come from the database. New skills are created when you save.</p>
                     </div>
                   </div>
 
-                  <div className="pt-4">
-                    <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Learning interests</label>
-                    <Input
+                  {/* Learning Interests */}
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                      Learning Interests & Training Goals
+                    </label>
+                    <input
                       type="text"
                       value={learningInterestInput}
                       onChange={(e) => setLearningInterestInput(e.target.value)}
                       onKeyDown={handleAddLearningInterest}
-                      placeholder="Type and press Enter to add"
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:border-(--ink-label) focus:ring-(--ink-label)"
+                      placeholder="Type a topic and press Enter (e.g. Hazardous Materials, Bio-decontamination)..."
+                      className="w-full max-w-lg px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all font-medium"
                     />
+
                     {learningInterests.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-3">
                         {learningInterests.map((interest) => (
                           <span
                             key={interest}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#f4f4f4] border border-[#e5e5e5] text-[#333333] text-xs font-medium rounded-full shadow-xs"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 shadow-2xs"
                           >
                             <span>{interest}</span>
                             <button
                               type="button"
                               onClick={() => removeLearningInterest(interest)}
-                              className="text-gray-400 hover:text-red-500 transition-colors flex items-center justify-center p-0.5"
+                              className="text-amber-600 hover:text-rose-600 transition-colors"
                               aria-label={`Remove ${interest}`}
                             >
                               <X className="w-3.5 h-3.5" />
@@ -921,112 +1327,339 @@ const CompleteProfile: React.FC = () => {
                       </div>
                     )}
                   </div>
-
                 </div>
               )}
 
+              {/* Tab 3: Personal Links & Portfolios */}
               {activeTab === "links" && (
                 <div className="space-y-6">
-                  <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 pb-2">Personal Links - Name and URL for each link</h3>
+                  <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Link2 className="w-4 h-4 text-amber-600" />
+                      Personal Links & Digital Presence
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Add your professional networks, LinkedIn, GitHub, and portfolio links.
+                    </p>
+                  </div>
 
-                  <div>
-                    <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Personal Site / Blog Links</label>
+                  <div className="space-y-3">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      Social & Professional Links
+                    </label>
+
                     {extraLinks.map((link, idx) => (
-                      <div key={idx} className="flex gap-2 mb-3 items-center">
-                        <Select className="w-1/4 border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-1 focus:border-(--honey) focus:ring-(--honey)">
-                          <option>Website</option>
-                          <option>LinkedIn</option>
-                          <option>Twitter</option>
-                          <option>GitHub</option>
-                        </Select>
-                        <Input type="text" placeholder="Name (e.g. Linked)" className="w-1/4 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:border-(--ink-label) focus:ring-(--ink-label)" value={link.title} onChange={(e) => handleLinkChange(idx, "title", e.target.value)} />
-                        <Input type="text" placeholder="https://" className="w-1/2 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:border-(--ink-label) focus:ring-(--ink-label)" value={link.url} onChange={(e) => handleLinkChange(idx, "url", e.target.value)} />
+                      <div key={idx} className="flex flex-col sm:flex-row gap-2.5 items-center">
+                        <select
+                          value={link.title || "Website"}
+                          onChange={(e) => handleLinkChange(idx, "title", e.target.value)}
+                          className="w-full sm:w-1/3 px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium cursor-pointer"
+                        >
+                          <option value="LinkedIn">LinkedIn</option>
+                          <option value="Website">Personal Website</option>
+                          <option value="GitHub">GitHub</option>
+                          <option value="Twitter">X / Twitter</option>
+                          <option value="Portfolio">Portfolio</option>
+                          <option value="Other">Other Link</option>
+                        </select>
+
+                        <div className="relative w-full flex-1">
+                          <input
+                            type="url"
+                            value={link.url}
+                            onChange={(e) => handleLinkChange(idx, "url", e.target.value)}
+                            placeholder="https://..."
+                            className="w-full pl-3 pr-8 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium font-mono text-xs"
+                          />
+                        </div>
+
                         {extraLinks.length > 1 && (
-                          <button onClick={() => handleRemoveLink(idx)} className="text-gray-400 hover:text-red-500 transition-colors shrink-0 p-1 flex items-center justify-center" title="Remove Link">
-                            <X className="w-5 h-5 text-slate-500" />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveLink(idx)}
+                            className="p-2 text-slate-400 hover:text-rose-500 transition-colors shrink-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                            title="Remove Link"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         )}
                       </div>
                     ))}
 
-                    <button onClick={handleAddLink} className="text-[14px] font-bold text-gray-700 hover:text-gray-900 flex items-center gap-1 mt-1">+ Add another link</button>
-
-                    <p className="text-[14px] text-gray-400 mt-2 mb-2">Each link has a type, a short name and a URL. Add as many as you need.</p>
+                    <button
+                      type="button"
+                      onClick={handleAddLink}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-lg transition-colors mt-1"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add another profile link</span>
+                    </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-100 dark:border-slate-800">
                     <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Portfolio URL</label>
-                      <Input type="url" value={form.portfolioUrl} onChange={updateField("portfolioUrl")} placeholder="https://" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm" />
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Portfolio URL
+                      </label>
+                      <input
+                        type="url"
+                        value={form.portfolioUrl}
+                        onChange={updateField("portfolioUrl")}
+                        placeholder="https://yourwork.example.com"
+                        className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium font-mono text-xs"
+                      />
                     </div>
+
                     <div>
-                      <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Website URL</label>
-                      <Input type="url" value={form.websiteUrl} onChange={updateField("websiteUrl")} placeholder="https://" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm" />
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                        Website URL
+                      </label>
+                      <input
+                        type="url"
+                        value={form.websiteUrl}
+                        onChange={updateField("websiteUrl")}
+                        placeholder="https://company.example.com"
+                        className="w-full px-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-medium font-mono text-xs"
+                      />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Public profile URL</label>
-                    <Input type="text" readOnly value={profile?.id ? `/profile/${profile.id}` : ""} className="w-full md:w-1/2 border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-gray-50 text-gray-500" />
+                  {/* Public Profile URL Card */}
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                      Your Public Learning Dossier Link
+                    </label>
+                    <div className="flex items-center gap-2 max-w-lg">
+                      <input
+                        type="text"
+                        readOnly
+                        value={profile?.id ? `${window.location.origin}/profile/${profile.id}` : "Link generated after first save"}
+                        className="w-full px-4 py-2 text-xs font-mono bg-slate-100 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-500 select-all"
+                      />
+                      {profile?.id && (
+                        <button
+                          type="button"
+                          onClick={handleCopyPublicUrl}
+                          className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 shadow-sm transition-all"
+                        >
+                          {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedLink ? "Copied" : "Copy"}</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
 
+              {/* Tab 4: Supporting Documents */}
               {activeTab === "documents" && (
                 <div className="space-y-6">
-                  <h3 className="text-[12px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 pb-2">Documents - Supporting Evidence</h3>
-
-                  <div>
-                    <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">CV / Resume <span className="text-gray-400 font-normal">(PDF, DOC, DOCX · up to 5 MB)</span></label>
-                    <div className="border border-dashed border-gray-300 rounded-lg bg-gray-50 p-6 flex items-center justify-center relative hover:bg-gray-100 transition-colors">
-                      <span className="text-xs text-gray-500">{form.resumeUrl ? "Resume uploaded · click to replace" : "Drag file here or click to browse"}</span>
-                      <input type="file" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                      {resumeUploading && <div className="absolute inset-0 bg-white/50 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin" /></div>}
-                    </div>
+                  <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-amber-600" />
+                      Supporting Evidence & Document Records
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Upload your official CV/Resume and any external industry certifications for credential verification.
+                    </p>
                   </div>
 
-                  <div>
-                    <label className="block text-[12px] font-bold text-gray-600 uppercase mb-2">Externally Earned Certificates <span className="text-gray-400 font-normal">(Multiple supported)</span></label>
-                    <div className="border border-dashed border-gray-300 rounded-lg bg-gray-50 p-6 flex items-center justify-center relative hover:bg-gray-100 transition-colors">
-                      <span className="text-xs text-gray-500">Add certificate files</span>
-                      <input type="file" multiple accept=".pdf,.png,.jpg,.jpeg" onChange={handleCertificateUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                      {certificateUploading && <div className="absolute inset-0 bg-white/50 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin" /></div>}
+                  {/* Resume / CV Section */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                      CV / Professional Resume
+                    </label>
+
+                    {form.resumeUrl ? (
+                      <div className="flex items-center justify-between p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300 flex items-center justify-center shrink-0">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-sm text-slate-900 dark:text-white">Resume Document on File</div>
+                            <div className="text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1 mt-0.5 font-medium">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Verified & Active
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <label className="cursor-pointer px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors shadow-2xs">
+                            <span>Replace</span>
+                            <input
+                              type="file"
+                              accept=".pdf,.doc,.docx"
+                              onChange={handleResumeUpload}
+                              className="hidden"
+                            />
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={handleDeleteResume}
+                            disabled={resumeUploading}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                            title="Delete resume"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:bg-slate-50/50 dark:hover:bg-slate-850/50 transition-colors relative">
+                        <div className="w-12 h-12 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mb-2">
+                          <Upload className="w-6 h-6" />
+                        </div>
+                        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                          Upload CV / Professional Resume
+                        </h4>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Supported formats: PDF, DOC, DOCX up to 5 MB
+                        </p>
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx"
+                          onChange={handleResumeUpload}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        {resumeUploading && (
+                          <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/70 rounded-2xl flex items-center justify-center">
+                            <Loader2 className="w-6 h-6 animate-spin text-amber-600" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* External Certificates Section */}
+                  <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                          External Industry Certifications
+                        </label>
+                        <p className="text-xs text-slate-400">
+                          Add prior certificates or diplomas to transfer professional credits.
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-slate-500">
+                        {certificates.length} uploaded
+                      </span>
                     </div>
+
+                    <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-5 text-center hover:bg-slate-50/50 dark:hover:bg-slate-850/50 transition-colors relative">
+                      <div className="flex items-center justify-center gap-2 text-xs font-bold text-amber-700 dark:text-amber-400">
+                        <Plus className="w-4 h-4" />
+                        <span>Click or drag certificate files here</span>
+                      </div>
+                      <input
+                        type="file"
+                        multiple
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        onChange={handleCertificateUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      {certificateUploading && (
+                        <div className="absolute inset-0 bg-white/70 dark:bg-slate-900/70 rounded-2xl flex items-center justify-center">
+                          <Loader2 className="w-6 h-6 animate-spin text-amber-600" />
+                        </div>
+                      )}
+                    </div>
+
+                    {certificates.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        {certificates.map((cert) => (
+                          <div
+                            key={cert.id}
+                            className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 shadow-2xs"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <Award className="w-4 h-4 text-amber-600 shrink-0" />
+                              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                                {cert.title}
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCertificate(cert.id)}
+                              className="text-slate-400 hover:text-rose-600 transition-colors p-1"
+                              title="Delete certificate"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="mt-10 pt-6 border-t border-gray-100 flex justify-between items-center">
-                <button onClick={handleSkip} className="text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors underline underline-offset-2">
-                  Skip for now
-                </button>
+              {/* Action Buttons Footer */}
+              <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  {currentTabIdx > 0 ? (
+                    <button
+                      type="button"
+                      onClick={handlePrevious}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition-all shadow-2xs"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Previous Step</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSkip}
+                      className="text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline underline-offset-4 transition-colors"
+                    >
+                      Skip for now
+                    </button>
+                  )}
+                </div>
 
-                {activeTab !== "documents" ? (
-                  <Button
-                    onClick={handleNext}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleSave(false)}
                     disabled={saving}
-                    className="bg-[#fef08a] hover:bg-yellow-300 text-gray-900 font-bold px-8 py-2.5 rounded-full text-sm shadow-sm transition-colors flex items-center gap-2"
+                    className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 transition-all shadow-2xs"
                   >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Next"}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => handleSave(true)}
-                    disabled={saving}
-                    className="bg-[#fef08a] hover:bg-yellow-300 text-gray-900 font-bold px-8 py-2.5 rounded-full text-sm shadow-sm transition-colors flex items-center gap-2"
-                  >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Finish"}
-                  </Button>
-                )}
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin inline mr-1" /> : null}
+                    Save Draft
+                  </button>
+
+                  {activeTab !== "documents" ? (
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      disabled={saving}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold shadow-sm hover:shadow transition-all disabled:opacity-50"
+                    >
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Next Step</span>}
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSave(true)}
+                      disabled={saving}
+                      className="inline-flex items-center gap-2 px-7 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow-sm hover:shadow transition-all disabled:opacity-50"
+                    >
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                      <span>Finish & Complete Profile</span>
+                    </button>
+                  )}
+                </div>
               </div>
-
-            </Card>
+            </div>
           </div>
-
         </div>
       </div>
 
+      {/* OTP Verification Modal */}
       <ProfileVerifyOTP
         isOpen={showOTPModal}
         onClose={() => setShowOTPModal(false)}
@@ -1034,6 +1667,7 @@ const CompleteProfile: React.FC = () => {
           setShowOTPModal(false);
           void getProfile();
           setNotice("Profile saved successfully.");
+          toast.success("Profile saved successfully.");
         }}
       />
     </div>
