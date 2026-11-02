@@ -270,10 +270,32 @@ const MemberLearning: React.FC = () => {
   // Wishlist toggle mutation
   const wishlistMutation = useWishlist();
 
-  const handleWishlistToggle = async (courseId: string, entityType: string, e: React.MouseEvent) => {
+  const handleWishlistToggle = async (
+    courseId: string,
+    entityType: string,
+    e: React.MouseEvent,
+    isCurrentlyWishlisted?: boolean
+  ) => {
     e.stopPropagation();
-    await wishlistMutation.mutateAsync({ entityId: courseId, entityType });
-    refetchStats();
+    try {
+      await wishlistMutation.mutateAsync({ entityId: courseId, entityType });
+      await Promise.all([refetchStats(), refetchCourses()]);
+      if (isCurrentlyWishlisted) {
+        notification.info({
+          message: "Removed from Wishlist",
+          description: "Course removed from your saved list.",
+          duration: 2.5,
+        });
+      } else {
+        notification.success({
+          message: "Saved to Wishlist",
+          description: "Course added to your wishlist.",
+          duration: 2.5,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to toggle wishlist", err);
+    }
   };
 
   const enrollMutation = useEnrollCourse();
@@ -766,7 +788,7 @@ const MemberLearning: React.FC = () => {
                     statusText={course.statusText}
                     isWishlisted={course.isWishlisted}
                     isWishlistLoading={wishlistMutation.isPending && wishlistMutation.variables?.entityId === course.id}
-                    onWishlistToggle={(e) => handleWishlistToggle(course.id, 'course', e)}
+                    onWishlistToggle={(e) => handleWishlistToggle(course.id, 'course', e, course.isWishlisted)}
                     onEnrol={(e) => handleEnrol(course.id, e)}
                     isEnrolLoading={enrollMutation.isPending && enrollMutation.variables === course.id}
                     onClick={() => handleCourseClick(course.id, 'course')}
@@ -869,27 +891,20 @@ const CourseCard: React.FC<CourseCardProps> = ({
           <button
             onClick={onWishlistToggle}
             disabled={isWishlistLoading}
-            className="absolute top-4 right-4 w-6 h-6 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+            title={isWishlisted ? "Remove from wishlist" : "Save to wishlist"}
+            className={`absolute top-3.5 right-3.5 w-7 h-7 sm:w-8 sm:h-8 border rounded-lg flex items-center justify-center transition-all disabled:opacity-50 ${
+              isWishlisted
+                ? "bg-[#fdf5ba] border-[#c99b2e] text-[#c99b2e] hover:bg-[#faee92]"
+                : "bg-white border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-300 hover:bg-gray-50"
+            }`}
           >
             {isWishlistLoading ? (
-              <svg className="animate-spin w-4 h-4 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin w-3.5 h-3.5 text-[#c99b2e]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             ) : (
-              <svg
-                className={`w-4 h-4 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
+              <Bookmark className={`w-3.5 h-3.5 ${isWishlisted ? "fill-[#c99b2e] text-[#c99b2e]" : ""}`} />
             )}
           </button>
         )}
@@ -1009,15 +1024,20 @@ const CourseCard: React.FC<CourseCardProps> = ({
                   if (onWishlistToggle) onWishlistToggle(e);
                 }}
                 disabled={isWishlistLoading}
-                className="w-7 h-7 border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                title={isWishlisted ? "Remove from wishlist" : "Save to wishlist"}
+                className={`w-7 h-7 sm:w-8 sm:h-8 border rounded-lg flex items-center justify-center transition-all disabled:opacity-50 ${
+                  isWishlisted
+                    ? "bg-[#fdf5ba] border-[#c99b2e] text-[#c99b2e] hover:bg-[#faee92]"
+                    : "bg-white border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-300 hover:bg-gray-50"
+                }`}
               >
                 {isWishlistLoading ? (
-                  <svg className="animate-spin w-3.5 h-3.5 text-[#141414]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin w-3.5 h-3.5 text-[#c99b2e]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 ) : (
-                  <Bookmark className={`w-3.5 h-3.5 ${isWishlisted ? "fill-[#141414] text-[#141414]" : ""}`} />
+                  <Bookmark className={`w-3.5 h-3.5 ${isWishlisted ? "fill-[#c99b2e] text-[#c99b2e]" : ""}`} />
                 )}
               </button>
             )}

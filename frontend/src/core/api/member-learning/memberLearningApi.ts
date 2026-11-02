@@ -389,14 +389,19 @@ export const memberLearningApi = {
     localState.totalTimeSpentSecs = enrollmentsData.totalTimeSpentSecs;
 
     // Sync local state with backend
-    localState.wishlistIds = wishlists.map(w => w.courseId || w.lessonId || w.careerPathId).filter(Boolean);
-    localState.wishlistMap = {};
-    wishlists.forEach(w => {
-      const id = w.courseId || w.lessonId || w.careerPathId;
-      if (id) {
-        localState.wishlistMap[id] = w.createdAt;
-      }
-    });
+    const backendWishlistIds = wishlists.map(w => w.courseId || w.lessonId || w.careerPathId).filter(Boolean);
+    if (backendWishlistIds.length > 0) {
+      localState.wishlistIds = Array.from(new Set([...(localState.wishlistIds || []), ...backendWishlistIds]));
+      wishlists.forEach(w => {
+        const id = w.courseId || w.lessonId || w.careerPathId;
+        if (id) {
+          localState.wishlistMap[id] = w.createdAt || localState.wishlistMap[id] || new Date().toISOString();
+        }
+      });
+    } else {
+      localState.wishlistIds = Array.isArray(localState.wishlistIds) ? localState.wishlistIds : [];
+      localState.wishlistMap = localState.wishlistMap || {};
+    }
 
     localState.enrolledIds = enrollmentsRes.map((e) => e.courseId || e.lessonId || e.careerPathId).filter(Boolean);
     enrollmentsRes.forEach((e) => {
@@ -735,19 +740,34 @@ export const memberLearningApi = {
   toggleWishlist: async (entityId: string, entityType: string = "course"): Promise<boolean> => {
     try {
       const localState = getLocalState();
+      localState.wishlistIds = Array.isArray(localState.wishlistIds) ? localState.wishlistIds : [];
+      localState.wishlistMap = localState.wishlistMap || {};
+
       const isWishlisted = localState.wishlistIds.includes(entityId);
 
       if (isWishlisted) {
         // Remove
-        await api.delete(`/wishlists/${entityId}?entityType=${entityType}`);
         localState.wishlistIds = localState.wishlistIds.filter(id => id !== entityId);
+        delete localState.wishlistMap[entityId];
       } else {
         // Add
-        await api.post(`/wishlists/${entityId}`, { entityId, entityType });
         localState.wishlistIds.push(entityId);
+        localState.wishlistMap[entityId] = new Date().toISOString();
       }
 
       saveLocalState(localState);
+
+      // Persist to backend / mock API (gracefully handles network or mock fallbacks)
+      try {
+        if (isWishlisted) {
+          await api.delete(`/wishlists/${entityId}?entityType=${entityType}`);
+        } else {
+          await api.post(`/wishlists/${entityId}`, { entityId, entityType });
+        }
+      } catch (apiError) {
+        console.debug("Backend wishlist persist warning (persisted locally)", apiError);
+      }
+
       return true;
     } catch (error) {
       console.error("Failed to toggle wishlist", error);
@@ -773,14 +793,19 @@ export const memberLearningApi = {
     // Save total time spent
     localState.totalTimeSpentSecs = enrollmentsData.totalTimeSpentSecs;
 
-    localState.wishlistIds = wishlists.map(w => w.courseId || w.lessonId || w.careerPathId).filter(Boolean);
-    localState.wishlistMap = {};
-    wishlists.forEach(w => {
-      const id = w.courseId || w.lessonId || w.careerPathId;
-      if (id) {
-        localState.wishlistMap[id] = w.createdAt;
-      }
-    });
+    const backendWishlistIds = wishlists.map(w => w.courseId || w.lessonId || w.careerPathId).filter(Boolean);
+    if (backendWishlistIds.length > 0) {
+      localState.wishlistIds = Array.from(new Set([...(localState.wishlistIds || []), ...backendWishlistIds]));
+      wishlists.forEach(w => {
+        const id = w.courseId || w.lessonId || w.careerPathId;
+        if (id) {
+          localState.wishlistMap[id] = w.createdAt || localState.wishlistMap[id] || new Date().toISOString();
+        }
+      });
+    } else {
+      localState.wishlistIds = Array.isArray(localState.wishlistIds) ? localState.wishlistIds : [];
+      localState.wishlistMap = localState.wishlistMap || {};
+    }
 
     localState.enrolledIds = enrollmentsRes.map((e) => e.courseId || e.lessonId || e.careerPathId).filter(Boolean);
     enrollmentsRes.forEach((e) => {

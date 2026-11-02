@@ -324,6 +324,75 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
     });
   }
 
+  // -------------------------------------------------------------
+  // WISHLISTS (Member Learning Wishlist)
+  // -------------------------------------------------------------
+  if (url.startsWith("/wishlists")) {
+    const getStoredWishlists = (): any[] => {
+      try {
+        const stored = localStorage.getItem("member_learning_state");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const ids: string[] = parsed.wishlistIds || [];
+          const map: Record<string, string> = parsed.wishlistMap || {};
+          return ids.map((id) => ({
+            id: `w-${id}`,
+            courseId: id,
+            entityType: "course",
+            createdAt: map[id] || new Date().toISOString(),
+          }));
+        }
+      } catch {}
+      return [];
+    };
+
+    if (method === "GET") {
+      const wishlists = getStoredWishlists();
+      return createMockResponse(config, {
+        success: true,
+        data: { wishlists },
+        wishlists,
+      });
+    }
+
+    if (method === "POST") {
+      const parts = url.split("?")[0].split("/");
+      const entityId = parts.length > 2 && parts[2] ? parts[2] : body?.entityId;
+      const entityType = body?.entityType || "course";
+      try {
+        const stored = localStorage.getItem("member_learning_state");
+        const state = stored ? JSON.parse(stored) : { wishlistIds: [], wishlistMap: {} };
+        if (!Array.isArray(state.wishlistIds)) state.wishlistIds = [];
+        if (!state.wishlistMap) state.wishlistMap = {};
+        if (entityId && !state.wishlistIds.includes(entityId)) {
+          state.wishlistIds.push(entityId);
+          state.wishlistMap[entityId] = new Date().toISOString();
+        }
+        localStorage.setItem("member_learning_state", JSON.stringify(state));
+      } catch {}
+      return createMockResponse(config, { success: true, message: "Added to wishlist" });
+    }
+
+    if (method === "DELETE") {
+      const parts = url.split("?")[0].split("/");
+      const entityId = parts.length > 2 ? parts[2] : undefined;
+      try {
+        const stored = localStorage.getItem("member_learning_state");
+        if (stored) {
+          const state = JSON.parse(stored);
+          if (Array.isArray(state.wishlistIds) && entityId) {
+            state.wishlistIds = state.wishlistIds.filter((id: string) => id !== entityId);
+          }
+          if (state.wishlistMap && entityId) {
+            delete state.wishlistMap[entityId];
+          }
+          localStorage.setItem("member_learning_state", JSON.stringify(state));
+        }
+      } catch {}
+      return createMockResponse(config, { success: true, message: "Removed from wishlist" });
+    }
+  }
+
   // Single Course Lessons
   if (url.match(/\/courses\/[a-zA-Z0-9_-]+\/lessons/) && method === "GET") {
     const parts = url.split("?")[0].split("/");
