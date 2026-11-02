@@ -399,6 +399,7 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
     const courseId = parts[parts.indexOf("courses") + 1];
     const found = STATIC_COURSES.find((c) => c.id === courseId || c.courseId === courseId) || STATIC_COURSES[0];
     const lessons = (found?.modules || []).flatMap((m) => m.lessons || []).map((l, i) => ({
+      ...l,
       id: l.id || `cl-${i}`,
       courseId: found.id,
       lessonId: l.id,
@@ -408,7 +409,6 @@ export async function handleMockRequest(config: InternalAxiosRequestConfig): Pro
         ...l,
         courseId: found.id,
       },
-      ...l,
     }));
     return createMockResponse(config, {
       success: true,

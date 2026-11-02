@@ -92,10 +92,10 @@ const Wishlist: React.FC = () => {
   const isProfileReady = !!userId;
 
   const user = useUserStore((state) => state.user);
-  const tenantId = useUserStore((state) => state.tenantId) || (user as any)?.tenantId || undefined;
+  const tenantId = (user as any)?.tenantId || undefined;
   const userRoles = (user?.roles || []).map((r: any) => (typeof r === "string" ? r : r.name || ""));
   const authRole =
-    useAuthStore((state) => state.user?.role) || (userRoles.length > 0 ? userRoles[0] : undefined);
+    useAuthStore((state) => state.role) || (userRoles.length > 0 ? userRoles[0] : undefined);
   const systemRoles = (user as any)?.systemRoles || [];
   const isCorporateAdmin =
     systemRoles.some(

@@ -91,10 +91,13 @@ interface CurriculumItem {
 }
 
 interface AttachmentItem {
-  type: "pdf" | "link";
+  type: string;
   title: string;
   meta: string;
   actionText: string;
+  isUnlocked?: boolean;
+  isLink?: boolean;
+  url?: string;
 }
 
 const CurriculumCourseItem = ({ courseItem, isTenant, onLessonClick }: { courseItem: CurriculumItem, isTenant: boolean, onLessonClick: (lessonId: string) => void }) => {

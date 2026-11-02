@@ -2431,7 +2431,7 @@ const CoursePlayer: React.FC = () => {
                             {activeTab === "Overview" && (
                                 <div className="bg-white border border-gray-200  m-4 px-5 py-4.5 rounded-xl space-y-6">
                                     <p className="text-[#3a3a3a] text-[16px] leading-relaxed ">
-                                        {activeLesson?.lesson?.description || activeLesson?.lesson?.shortDescription || activeLesson?.description || `Master the certified procedures, equipment operation standards, and safety guidelines for ${activeLesson?.title || 'this module'}. Follow step-by-step verified protocols to maintain compliance and operational excellence.`}
+                                        {activeLesson?.lesson?.description || activeLesson?.lesson?.shortDescription || (activeLesson as any)?.description || `Master the certified procedures, equipment operation standards, and safety guidelines for ${activeLesson?.title || 'this module'}. Follow step-by-step verified protocols to maintain compliance and operational excellence.`}
                                     </p>
 
                                     <div className="flex flex-wrap items-center gap-2">
