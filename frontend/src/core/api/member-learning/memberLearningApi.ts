@@ -57,6 +57,9 @@ const getLocalState = (): LocalLearningState => {
 
 const saveLocalState = (state: LocalLearningState) => {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("member-learning-state-updated", { detail: state }));
+  }
 };
 
 export const isLearningContentVisible = (item: any, role?: string, tenantId?: string) => {
